@@ -1,0 +1,5 @@
+set OSPL_HOME=C:/developpement/C++/libs/opensplice/HDE/x86_64.win64
+
+%OSPL_HOME%\bin\idlpp -l cs -d ../../Scripts/DDS/Topics ./ddsChat.idl
+
+pause

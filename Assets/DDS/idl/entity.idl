@@ -1,0 +1,32 @@
+#include "common.idl"
+
+module entity
+{
+	struct EntityInfo
+	{
+		short id;
+		string type;
+	};
+	#pragma keylist EntityInfo id
+
+	struct EntityKinematicsInfo
+	{
+		short id;
+
+		float x;
+		float y;
+		float z;
+
+		double roll;
+		double pitch;
+		double yaw;
+	};
+	#pragma keylist EntityKinematicsInfo id
+
+	struct EntityShape
+	{
+		short id;
+		sequence<common::Triangle> triangles_list;
+	};
+	#pragma keylist EntityShape id
+};

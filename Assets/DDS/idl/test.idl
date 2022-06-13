@@ -1,0 +1,10 @@
+module testIt
+{
+	struct TestAll
+	{
+		short id;
+		long cpt;
+		string text;
+	};
+#pragma keylist TestAll id
+};

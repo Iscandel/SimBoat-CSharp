@@ -1,0 +1,10 @@
+module chat
+{
+	struct ChatMsg
+	{
+		short id;
+		long cpt;
+		string text;
+	};
+#pragma keylist ChatMsg id
+};
