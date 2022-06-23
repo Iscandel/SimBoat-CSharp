@@ -99,6 +99,22 @@ public class ChronoPhysicsManager : MonoBehaviour
         _chBody.SetMass(mass);
     }
 
+    public Vector3 GetSpeed()
+    {
+        ChFrameMovingD chronoFrame = _chBody.GetFrame_REF_to_abs();
+        ChVectorD speed = chronoFrame.GetPos_dt();
+
+        return new Vector3((float)speed.x, (float)speed.y, (float)speed.z);
+    }
+    public Vector3 GetSpeedBody()
+    {
+        ChFrameMovingD chronoFrame = _chBody.GetFrame_REF_to_abs();
+        ChVectorD speed = chronoFrame.GetPos_dt();
+
+        ChVectorD speed_body = chronoFrame.TransformDirectionParentToLocal(chronoFrame.GetPos_dt());
+        return new Vector3((float)speed_body.x, (float)speed_body.y, (float)speed_body.z);
+    }
+
     public void setFirstSimTime(double simTime)
     {
         _oldTime = simTime;
@@ -115,7 +131,38 @@ public class ChronoPhysicsManager : MonoBehaviour
         }
     }
 
-    public void UpdateForces(Force forces, Vector3 torques, double currentTime)
+    public void UpdateForces(Vector3 forces, Vector3 torques, double currentTime)
+    {
+        //if (currentTime - _oldTime > 0)
+        {
+            Vector3 vectForce = forces;
+            ChVectorD chforce = new ChVectorD(vectForce.x, vectForce.y, vectForce.z);
+            if (_refFrame == RefFrame.WORLD)
+                _chForce.SetDir(chforce.GetNormalized());
+            else
+                _chForce.SetRelDir(chforce.GetNormalized());
+            _chForce.SetMforce(chforce.Length());
+
+            //TODO Check
+            //_chForce.SetVrelpoint(new ChVectorD(forces.appliPoint.x, forces.appliPoint.y, forces.appliPoint.y));
+
+            //Debug.Log("Applying torques: " + vSum);
+
+            ChVectorD chtorque = new ChVectorD(torques.x, torques.y, torques.z);
+            if (_refFrame == RefFrame.WORLD)
+                _chTorque.SetDir(chtorque.GetNormalized());
+            else
+                _chTorque.SetRelDir(chtorque.GetNormalized());
+            _chTorque.SetMforce(chtorque.Length());
+            //Debug.Log(currentTime);
+
+            _chSystem.DoStepDynamics(currentTime);// - _oldTime);
+            UpdateBodyState();
+            _oldTime = currentTime;
+        }
+    }
+
+    public void UpdateForces(Force forces, double currentTime)
     {
         //if (currentTime - _oldTime > 0)
         {
@@ -130,14 +177,6 @@ public class ChronoPhysicsManager : MonoBehaviour
             _chForce.SetVrelpoint(new ChVectorD(forces.appliPoint.x, forces.appliPoint.y, forces.appliPoint.y));
 
             //Debug.Log("Applying torques: " + vSum);
-
-            ChVectorD chtorque = new ChVectorD(torques.x, torques.y, torques.z);
-            if (_refFrame == RefFrame.WORLD)
-                _chTorque.SetDir(chtorque.GetNormalized());
-            else
-                _chTorque.SetRelDir(chtorque.GetNormalized());
-            _chTorque.SetMforce(chtorque.Length());
-            //Debug.Log(currentTime);
 
             _chSystem.DoStepDynamics(currentTime);// - _oldTime);
             UpdateBodyState();
