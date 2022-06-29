@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: e5365841cb1f8bc42a6fdbf574f0c32f, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.6748823, g: 0.79787046, b: 0.98233265, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -97,7 +97,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: fa8de54e894f3a3479b9f96e565c3fc5, type: 2}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -123,6 +123,38 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &556342772
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 556342773}
+  m_Layer: 0
+  m_Name: OceanShape
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &556342773
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 556342772}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -41.403915, y: -7.2033644, z: 0.23326603}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1894393008}
+  m_Father: {fileID: 0}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &558852104
 GameObject:
   m_ObjectHideFlags: 0
@@ -157,14 +189,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 558852104}
-  m_LocalRotation: {x: 0.6758131, y: -0, z: -0, w: 0.73707306}
+  m_LocalRotation: {x: 0.15957603, y: 0.659576, z: -0.14622447, w: 0.719801}
   m_LocalPosition: {x: 6.72, y: 9.01, z: -2.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 85.035, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 25, y: 85, z: 0}
 --- !u!108 &558852107
 Light:
   m_ObjectHideFlags: 0
@@ -176,14 +208,14 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 0.8867924, g: 0.8180537, b: 0.20496619, a: 1}
-  m_Intensity: 10
+  m_Color: {r: 0.8867924, g: 0.8180537, b: 0.6156863, a: 1}
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 0
+    m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -243,7 +275,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!108 &705507994
 Light:
   m_ObjectHideFlags: 0
@@ -611,7 +643,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 507bb30621f41444791196958ab0756b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _refFrame: 1
 --- !u!114 &1147988130
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -625,7 +656,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _underwaterGameObject: {fileID: 1205505022}
-  _mass: 800
+  _mass: 10
+  _cogOffset: {x: 0, y: 0, z: 0}
+  _diagInertia: {x: 50, y: 50, z: 50}
 --- !u!65 &1147988131
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -788,6 +821,73 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1894393007
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1894393008}
+  - component: {fileID: 1894393009}
+  m_Layer: 0
+  m_Name: Gertsner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1894393008
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894393007}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 556342773}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1894393009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894393007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a57126133720c243a7af00a156c9ee8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _version: 0
+  _windTurbulence: 0.145
+  _spectrum: {fileID: 0}
+  _spectrumFixedAtRuntime: 1
+  _waveDirectionHeadingAngle: 0
+  _overrideGlobalWindSpeed: 0
+  _windSpeed: 20
+  _weight: 1
+  _respectShallowWaterAttenuation: 1
+  _componentsPerOctave: 8
+  _randomSeed: 0
+  _resolution: 32
+  _debugDrawSlicesInEditor: 0
+  _overrideSplineSettings: 0
+  _radius: 50
+  _subdivisions: 1
+  _featherWaveStart: 0.1
+  _maxVerticalDisplacement: 10
+  _maxHorizontalDisplacement: 15
+  _enableBakedCollision: 0
+  _timeResolution: 4
+  _smallestWavelengthRequired: 2
+  _timeLoopLength: 32
 --- !u!23 &1421735959497780736
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -992,7 +1092,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 507bb30621f41444791196958ab0756b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _refFrame: 1
 --- !u!114 &8869195189730755448
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1007,6 +1106,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _underwaterGameObject: {fileID: 0}
   _mass: 10
+  _cogOffset: {x: 0, y: 0, z: 0}
+  _diagInertia: {x: 50, y: 50, z: 50}
 --- !u!33 &9022644439529302594
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1029,6 +1130,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _underwaterGameObject: {fileID: 0}
   _mass: 1000
+  _cogOffset: {x: 0, y: 0, z: 0}
+  _diagInertia: {x: 50, y: 50, z: 50}
 --- !u!114 &9022644439529302596
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1041,4 +1144,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 507bb30621f41444791196958ab0756b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _refFrame: 1

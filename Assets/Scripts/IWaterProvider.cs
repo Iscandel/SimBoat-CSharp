@@ -7,6 +7,8 @@ using UnityEngine;
 
 interface IWaterProvider
 {
+    bool UpdateSamplingList(Vector3[] samplePoints);
+
     float GetHeightAt(int listIndex);
     float GetHeightAt(Vector3 samplePoint);
 }

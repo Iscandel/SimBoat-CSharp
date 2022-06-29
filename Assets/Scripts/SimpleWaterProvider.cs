@@ -24,4 +24,9 @@ internal class SimpleWaterProvider : IWaterProvider
     {
         return _waterLevel;
     }
+
+    public bool UpdateSamplingList(Vector3[] samplePoints)
+    {
+        return true;
+    }
 }

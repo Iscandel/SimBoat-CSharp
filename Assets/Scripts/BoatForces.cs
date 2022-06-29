@@ -2,8 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BoatForces : MonoBehaviour
+public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
 {
+
     struct Triangle
     {
         public Triangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
@@ -52,9 +53,16 @@ public class BoatForces : MonoBehaviour
 
     float _surface = 0;
     float _submergedSurface = 0;
-    public float _mass = 10;
+    //public float _mass = 10;
 
     IWaterProvider _waterProvider;
+
+    Body _body;
+    BodyState _bodyState;
+
+    public float _mass = 100;
+    public Vector3 _cogOffset = new Vector3(0,0,0);
+    public Vector3 _diagInertia = new Vector3(50, 50, 50);
 
     // Start is called before the first frame update
     void Start()
@@ -79,11 +87,27 @@ public class BoatForces : MonoBehaviour
             _surface += 0.5f * normal.magnitude;
         }
 
-        _waterProvider = new SimpleWaterProvider(0);
-            //GetComponent<ChronoPhysicsManager.in
+        //_waterProvider = new SimpleWaterProvider(0);
+        _waterProvider = new CrestWaterProvider(1);
+        //GetComponent<ChronoPhysicsManager.in
 
-            //_mass = 1000;
-        }
+        //
+        ChronoPhysicsManager manager = ChronoPhysicsManager.Instance;
+
+        //_bodyState = new BodyState();
+
+
+        BodyParams bodyParams = new BodyParams();
+        bodyParams.mass = _mass;
+        bodyParams.cogOffset = new Vector3(0, 0, 0);
+        bodyParams.diagInertia = new Vector3(50, 50, 50);
+        //TODO init with init body state
+        _body = manager.CreateBody(bodyParams);
+        manager.addForceListener(this, _body, RefFrame.WORLD);
+        manager.AddPhysicsEventListener(this);
+
+        //_mass = 1000;
+    }
 
     // Update is called once per frame
     void Update()
@@ -100,16 +124,16 @@ public class BoatForces : MonoBehaviour
 
     void FixedUpdate()
     {
-        ChronoPhysicsManager manager = GetComponent<ChronoPhysicsManager>();
-        manager.SetMass(_mass);
-        //(Force forces, Vector3 torques) = ComputeWeight();
-        Force forces = ComputeWeight();
-        (Force forcesB, Vector3 torquesB) = ComputeBuoyancy();
-        Force damping = ComputeDamping(_submergedSurface, _surface, manager.GetSpeedBody());
+        //ChronoPhysicsManager manager = GetComponent<ChronoPhysicsManager>();
+        //manager.SetMass(_mass);
+        ////(Force forces, Vector3 torques) = ComputeWeight();
+        //Force forces = ComputeWeight();
+        //(Force forcesB, Vector3 torquesB) = ComputeBuoyancy();
+        //Force damping = ComputeDamping(_submergedSurface, _surface, manager.GetSpeedBody());
 
-        forces.force += forcesB.force + damping.force;
+        //forces.force += forcesB.force + damping.force;
 
-        manager.UpdateForces(forces, Time.deltaTime);
+        //manager.UpdateForces(forces, Time.deltaTime);
     }
 
 /*    (Vector3 force, Vector3 torque) ComputeWeight()
@@ -179,6 +203,21 @@ public class BoatForces : MonoBehaviour
 
         _submergedTriangles.Clear();
 
+        Vector3[] samplingList = new Vector3[_trianglesAndVertices.Length * 3];
+        for (int i = 0; i < _trianglesAndVertices.Length; i++)
+        {
+            int[] indices = { _mesh.triangles[i * 3], _mesh.triangles[(i * 3) + 1], _mesh.triangles[(i * 3) + 2] };
+            Vector3 worldVertex0 = transform.TransformPoint(vertices[indices[0]]);
+            Vector3 worldVertex1 = transform.TransformPoint(vertices[indices[1]]);
+            Vector3 worldVertex2 = transform.TransformPoint(vertices[indices[2]]);
+
+            samplingList[i * 3] = worldVertex0;
+            samplingList[i * 3 + 1] = worldVertex1;
+            samplingList[i * 3 + 2] = worldVertex2;
+        }
+
+        _waterProvider.UpdateSamplingList(samplingList);
+
         for (int i = 0; i < _trianglesAndVertices.Length; i++)
         {
             Hashtable hashtable = new Hashtable();  
@@ -190,15 +229,16 @@ public class BoatForces : MonoBehaviour
             Vector3 worldVertex1 = transform.TransformPoint(vertices[indices[1]]);
             Vector3 worldVertex2 = transform.TransformPoint(vertices[indices[2]]);
 
-            float waterLevel = _waterProvider.GetHeightAt(worldVertex0);
+            float waterLevel = _waterProvider.GetHeightAt(i * 3);
+            Debug.Log(waterLevel);
             //if (worldVertex0.y < waterLevel)
             h.Add(new VertexAndDepth(worldVertex0, worldVertex0.y - waterLevel));
 
-            waterLevel = _waterProvider.GetHeightAt(worldVertex1);
+            waterLevel = _waterProvider.GetHeightAt(i * 3 + 1);
             //if(worldVertex1.y < waterLevel)
             h.Add(new VertexAndDepth(worldVertex1, worldVertex1.y - waterLevel));
 
-            waterLevel = _waterProvider.GetHeightAt(worldVertex2);
+            waterLevel = _waterProvider.GetHeightAt(i * 3 + 2);
             //if(worldVertex2.y < waterLevel)
             h.Add(new VertexAndDepth(worldVertex2, worldVertex2.y - waterLevel));
 
@@ -237,8 +277,8 @@ public class BoatForces : MonoBehaviour
                     float tl = -_trianglesAndVertices[i].hl.h / (_trianglesAndVertices[i].hh.h - _trianglesAndVertices[i].hl.h);
                     Vector3 vecIl = tl * lh;
                     Vector3 il = vecIl + _trianglesAndVertices[i].hl.vertex;
-                    _submergedTriangles.Add(new Triangle(_trianglesAndVertices[i].hm.vertex, il, _trianglesAndVertices[i].hl.vertex, currentTriNormal));
-                    _submergedTriangles.Add(new Triangle(il, _trianglesAndVertices[i].hm.vertex, im, currentTriNormal));
+                    _submergedTriangles.Add(new Triangle(il, _trianglesAndVertices[i].hm.vertex, _trianglesAndVertices[i].hl.vertex, currentTriNormal));
+                    _submergedTriangles.Add(new Triangle(im, _trianglesAndVertices[i].hm.vertex, il, currentTriNormal));
                 }
                 else if ( _trianglesAndVertices[i].hm.h > 0 && _trianglesAndVertices[i].hl.h < 0)
                 {
@@ -252,7 +292,7 @@ public class BoatForces : MonoBehaviour
                     float th = -_trianglesAndVertices[i].hl.h / (_trianglesAndVertices[i].hh.h - _trianglesAndVertices[i].hl.h);
                     Vector3 vecJh = th * lh;
                     Vector3 jh = vecJh + _trianglesAndVertices[i].hl.vertex;
-                    _submergedTriangles.Add(new Triangle(_trianglesAndVertices[i].hl.vertex, jh, jm, currentTriNormal));
+                    _submergedTriangles.Add(new Triangle(jh, _trianglesAndVertices[i].hl.vertex, jm, currentTriNormal));
                 }
             } 
             else if(_trianglesAndVertices[i].hh.h < 0 && _trianglesAndVertices[i].hm.h < 0 && _trianglesAndVertices[i].hl.h < 0)
@@ -307,5 +347,46 @@ public class BoatForces : MonoBehaviour
     private void CuttingAlgorithm()
     {
 
+    }
+
+    public void OnPhysicsEvent(IPhysicsListener.EventType eventType)
+    {
+        if(eventType == IPhysicsListener.EventType.START)
+        {
+
+        }
+        if(eventType == IPhysicsListener.EventType.END)
+        {
+            ChronoPhysicsManager manager = ChronoPhysicsManager.Instance;
+            _bodyState = manager.GetBodyState(_body);
+
+            //float roll = 0;
+            //float pitch = 0;
+            //float yaw = 0;
+            //GetEulerAngleDegrees(rotation, ref roll, ref pitch, ref yaw);
+
+            Vector3 v3Pos = new Vector3(float.IsNaN(_bodyState.pos.x) ? 0.0f : _bodyState.pos.x,
+                                        float.IsNaN(_bodyState.pos.y) ? 0.0f : _bodyState.pos.y,
+                                        float.IsNaN(_bodyState.pos.z) ? 0.0f : _bodyState.pos.z);
+
+            //Vector3 v3EulerAngles = new Vector3(float.IsNaN(roll) ? 0.0f : roll,
+            //                                    float.IsNaN(pitch) ? 0.0f : pitch,
+            //                                    float.IsNaN(yaw) ? 0.0f : yaw);
+
+            //// Use GetComponent<Transform>() instead TODO
+            this.gameObject.transform.position = v3Pos;
+            this.gameObject.transform.rotation = _bodyState.rot;//.eulerAngles = v3EulerAngles;
+        }
+    }
+
+    public void ComputeForce(Body body, ref List<Force> force, BodyState state)
+    {
+        //(Force forces, Vector3 torques) = ComputeWeight();
+        Force forces = ComputeWeight();
+        (Force forcesB, Vector3 torquesB) = ComputeBuoyancy();
+        Force damping = ComputeDamping(_submergedSurface, _surface, _bodyState.speed_body);
+        force.Add(forces);
+
+        //forces.force += forcesB.force + damping.force;
     }
 }
