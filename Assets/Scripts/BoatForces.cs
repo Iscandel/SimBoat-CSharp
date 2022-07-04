@@ -7,12 +7,13 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
 
     struct Triangle
     {
-        public Triangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
+        public Triangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, double z0)
         {
             this.p1 = p1;
             this.p2 = p2;
             this.p3 = p3;
             this.normal = normal;
+            this.z0 = z0;
         }
 
         public Vector3 p1;
@@ -20,6 +21,8 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
         public Vector3 p3;
 
         public Vector3 normal;
+
+        public double z0;
     }
 
     internal struct VertexAndDepth
@@ -64,6 +67,8 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
     public Vector3 _cogOffset = new Vector3(0,0,0);
     public Vector3 _diagInertia = new Vector3(50, 50, 50);
 
+    public RefFrame _refFrame = RefFrame.WORLD;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -87,23 +92,23 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
             _surface += 0.5f * normal.magnitude;
         }
 
-        //_waterProvider = new SimpleWaterProvider(0);
-        _waterProvider = new CrestWaterProvider(1);
+        _waterProvider = new SimpleWaterProvider(0);
+        //_waterProvider = new CrestWaterProvider(1);
         //GetComponent<ChronoPhysicsManager.in
 
         //
         ChronoPhysicsManager manager = ChronoPhysicsManager.Instance;
 
-        //_bodyState = new BodyState();
+        _bodyState = new BodyState();
 
 
         BodyParams bodyParams = new BodyParams();
         bodyParams.mass = _mass;
-        bodyParams.cogOffset = new Vector3(0, 0, 0);
-        bodyParams.diagInertia = new Vector3(50, 50, 50);
+        bodyParams.cogOffset = _cogOffset;
+        bodyParams.diagInertia = _diagInertia;
         //TODO init with init body state
-        _body = manager.CreateBody(bodyParams);
-        manager.addForceListener(this, _body, RefFrame.WORLD);
+        _body = manager.CreateBody(bodyParams, transform.position, transform.rotation);
+        manager.addForceListener(this, _body, _refFrame);
         manager.AddPhysicsEventListener(this);
 
         //_mass = 1000;
@@ -156,18 +161,21 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
 
         Vector3 G = new Vector3(0, -9.81f, 0);
         force.force = _mass * G;
+        force.appliPoint = this.transform.position;
 
         //Debug.Log(force.y);
 
         return force;
     }
 
-    Force ComputeDamping(float submergedSurface, float totalSurface, Vector3 speed_body)
+    Force ComputeDamping(float submergedSurface, float totalSurface, Vector3 speed_value)
     {
         Force force;
         const float Cdamp = 1000;
         float rs = submergedSurface / totalSurface;
-        force.force = -Cdamp * rs * speed_body;
+        force.force = -Cdamp * rs * speed_value;
+
+        //TODO
         force.appliPoint = new Vector3(0, 0, 0);
 
         return force;
@@ -178,19 +186,56 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
         public int Compare(VertexAndDepth a, VertexAndDepth b)
         {
             int cmp =  a.h.CompareTo(b.h);
-            if(cmp == 0) cmp = -1;
+            if (cmp == 0)
+            {
+                if (a.vertex.x < b.vertex.x)
+                    return -1;
+                else if (a.vertex.x == b.vertex.x)
+                {
+                    if (a.vertex.z < b.vertex.z)
+                        return -1;
+                    else
+                        return 1;
+                }
+                else
+                    return 1;
+            }
             return cmp;
             //if(cmp == 0)
             //    return a.vertex.x
         }
     }
 
-    (Force force, Vector3 torque) ComputeBuoyancy()
+    //(Force force, Vector3 torque) ComputeBuoyancy()
+
+    Force ComputeTheoriticalBuoyancy()
+    {
+        Force force = new Force();
+
+        float lowY = this.transform.position.y - 0.5f;
+        if (lowY > 0)
+        {
+            force.force = new Vector3();
+            force.appliPoint = this.transform.position;
+        }
+        else
+        {
+            float volume = Mathf.Min(Mathf.Abs(lowY), 1.0f) * 1 * 1;
+            Vector3 G = new Vector3(0, 9.81f, 0);
+            float RHO = 1026;
+            force.force = RHO * volume * G;
+            force.appliPoint = this.transform.position;
+        }
+
+        return force;
+    }
+
+    List<Force> ComputeBuoyancy()
     {
         //float d = transform.position.y - 0.5f;
 
-        Force force = new Force();
-        Vector3 torque = new Vector3();
+        //Force force = new Force();
+        //Vector3 torque = new Vector3();
 
         //if (d < 0)
         //    force.y = 1026 * -System.Math.Max(d, -1) * 9.81f;
@@ -277,8 +322,19 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
                     float tl = -_trianglesAndVertices[i].hl.h / (_trianglesAndVertices[i].hh.h - _trianglesAndVertices[i].hl.h);
                     Vector3 vecIl = tl * lh;
                     Vector3 il = vecIl + _trianglesAndVertices[i].hl.vertex;
-                    _submergedTriangles.Add(new Triangle(il, _trianglesAndVertices[i].hm.vertex, _trianglesAndVertices[i].hl.vertex, currentTriNormal));
-                    _submergedTriangles.Add(new Triangle(im, _trianglesAndVertices[i].hm.vertex, il, currentTriNormal));
+
+                    Vector3 tmpNormal = Vector3.Cross(_trianglesAndVertices[i].hm.vertex - _trianglesAndVertices[i].hl.vertex, _trianglesAndVertices[i].hl.vertex - il);
+                    if (CompareNormals(tmpNormal, currentTriNormal))
+                    {
+                        _submergedTriangles.Add(new Triangle(il, _trianglesAndVertices[i].hm.vertex, _trianglesAndVertices[i].hl.vertex, currentTriNormal, _trianglesAndVertices[i].hh.h));
+                        _submergedTriangles.Add(new Triangle(im, _trianglesAndVertices[i].hm.vertex, il, currentTriNormal, _trianglesAndVertices[i].hh.h));
+                    }
+                    else
+                    {
+                        _submergedTriangles.Add(new Triangle(il, _trianglesAndVertices[i].hl.vertex, _trianglesAndVertices[i].hm.vertex, currentTriNormal, _trianglesAndVertices[i].hh.h));
+                        _submergedTriangles.Add(new Triangle(im, il, _trianglesAndVertices[i].hm.vertex, currentTriNormal, _trianglesAndVertices[i].hh.h));
+                    }
+
                 }
                 else if ( _trianglesAndVertices[i].hm.h > 0 && _trianglesAndVertices[i].hl.h < 0)
                 {
@@ -292,11 +348,16 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
                     float th = -_trianglesAndVertices[i].hl.h / (_trianglesAndVertices[i].hh.h - _trianglesAndVertices[i].hl.h);
                     Vector3 vecJh = th * lh;
                     Vector3 jh = vecJh + _trianglesAndVertices[i].hl.vertex;
-                    _submergedTriangles.Add(new Triangle(jh, _trianglesAndVertices[i].hl.vertex, jm, currentTriNormal));
+
+                    Vector3 tmpNormal = Vector3.Cross(jm - jh, _trianglesAndVertices[i].hl.vertex - jh);
+                    if (!CompareNormals(tmpNormal, currentTriNormal))
+                        _submergedTriangles.Add(new Triangle(jh, _trianglesAndVertices[i].hl.vertex, jm, currentTriNormal, _trianglesAndVertices[i].hh.h));
+                    else
+                        _submergedTriangles.Add(new Triangle(jh, jm, _trianglesAndVertices[i].hl.vertex, currentTriNormal, _trianglesAndVertices[i].hh.h));
                 }
             } 
             else if(_trianglesAndVertices[i].hh.h < 0 && _trianglesAndVertices[i].hm.h < 0 && _trianglesAndVertices[i].hl.h < 0)
-                _submergedTriangles.Add(new Triangle(worldVertex0, worldVertex1, worldVertex2, currentTriNormal));
+                _submergedTriangles.Add(new Triangle(worldVertex0, worldVertex1, worldVertex2, currentTriNormal, _trianglesAndVertices[i].hh.h));
         }
 
         List<Vector3> uvertices = new List<Vector3>();
@@ -304,6 +365,8 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
         List<Color> ucolor = new List<Color>();
         List<Vector3> unormals = new List<Vector3>();
         Color col = Color.yellow;
+
+        List<Force> forces = new List<Force>();
 
         _submergedSurface = 0;
         foreach (Triangle triangle in _submergedTriangles)
@@ -314,22 +377,43 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
             Vector3 center = (triangle.p1 + triangle.p2 + triangle.p3) / 3.0f;
             Vector3 tmpForce = -1026 * 9.81f * area * triangle.normal * System.Math.Abs(center.y);
             //Debug.Log(center.y);
-            force.force += transform.InverseTransformDirection(tmpForce);
-            force.appliPoint = transform.InverseTransformPoint(center);
+            Force force = new Force();
+            force.force = tmpForce;
+            force.appliPoint = center;
+            forces.Add(force);
+            //force.force += transform.InverseTransformDirection(tmpForce);
+            //force.appliPoint = transform.InverseTransformPoint(center);
+
+            //uvertices.Add(new Vector3(0.5f, 0, -0.5f));
+            //unormals.Add(new Vector3(1.0f, 0, 0));
+            //utri.Add(uvertices.Count - 1);
+            //ucolor.Add(col);
+            //uvertices.Add(new Vector3(0.5f, 0, 0));
+            //unormals.Add(new Vector3(1.0f, 0, 0));
+            //utri.Add(uvertices.Count - 1);
+            //ucolor.Add(col);
+            //uvertices.Add(new Vector3(0.5f, -0.5f, -0.5f));
+            //unormals.Add(new Vector3(1.0f, 0, 0));
+            //utri.Add(uvertices.Count - 1);
+            //ucolor.Add(col);
+
 
             uvertices.Add(transform.InverseTransformPoint(triangle.p1));
-            unormals.Add(normal);
+            unormals.Add(transform.InverseTransformDirection(triangle.normal));
             utri.Add(uvertices.Count - 1);
             ucolor.Add(col);
             uvertices.Add(transform.InverseTransformPoint(triangle.p2));
-            unormals.Add(normal);
+            unormals.Add(transform.InverseTransformDirection(triangle.normal));
             utri.Add(uvertices.Count - 1);
             ucolor.Add(col);
             uvertices.Add(transform.InverseTransformPoint(triangle.p3));
-            unormals.Add(normal);
+            unormals.Add(transform.InverseTransformDirection(triangle.normal));
             utri.Add(uvertices.Count - 1);
             ucolor.Add(col);
         }
+
+
+
 
         _underwaterMesh.Clear();
         _underwaterMesh.name = "underwater mesh";
@@ -341,7 +425,41 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
 
         //Debug.Log(force.y);
 
-        return (force: force, torque: torque);
+        return forces;
+        //return (force: force, torque: torque);
+    }
+
+    void ComputeCentroid()
+    {
+
+    }
+
+    bool NeedToBeCut(TriangleAndVertices tv)
+    {
+        if (tv.hh.h == tv.hm.h || tv.hm.h == tv.hl.h)
+            return false;
+        return true;
+    }
+
+    //Vector3 ComputeCenterOfPressure(Triangle t, TriangleAndVertices tv)
+    //{
+    //    if (needsToBeCut(tv))
+    //    {
+    //        double middlePoint = vd.hm;
+    //    }
+
+    //    double z0 = t.z0;
+    //    double h = Mathf.Max(Mathf.Max(Mathf.Abs(t.p1.y - t.p2.y), Mathf.Abs(t.p1.y - t.p3.y)), Mathf.Abs(t.p2.y - t.p3.y));
+    //    double tc = (2 * z0 + h) / (6 * z0 + 2 * h);
+       
+
+    //}
+
+    bool CompareNormals(Vector3 a, Vector3 b)
+    {
+        if (Mathf.Sign(a.x) == Mathf.Sign(b.x) && Mathf.Sign(a.y) == Mathf.Sign(b.y) && Mathf.Sign(a.z) == Mathf.Sign(b.z))
+            return true;
+        return false;
     }
 
     private void CuttingAlgorithm()
@@ -383,10 +501,22 @@ public class BoatForces : MonoBehaviour, IPhysicsListener, IForceListener
     {
         //(Force forces, Vector3 torques) = ComputeWeight();
         Force forces = ComputeWeight();
-        (Force forcesB, Vector3 torquesB) = ComputeBuoyancy();
-        Force damping = ComputeDamping(_submergedSurface, _surface, _bodyState.speed_body);
-        force.Add(forces);
+        //(Force forcesB, Vector3 torquesB) = ComputeBuoyancy();
+        List<Force> forcesB = ComputeBuoyancy();
+        //Force forceTheoriB = ComputeTheoriticalBuoyancy();
 
+        Vector3 speed;
+        if (_refFrame == RefFrame.WORLD)
+            speed = _bodyState.speed;
+        else
+            speed = _bodyState.speed_body;
+        Force damping = ComputeDamping(_submergedSurface, _surface, speed);
+        force.Add(forces);
+        foreach (Force fb in forcesB)
+            force.Add(fb);
+        //force.Add(forceTheoriB);
+        //force.Add(damping);
+        //Debug.Log(forcesB.force);
         //forces.force += forcesB.force + damping.force;
     }
 }

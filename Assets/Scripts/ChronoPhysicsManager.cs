@@ -238,10 +238,10 @@ public class ChronoPhysicsManager : MonoBehaviour
             }
         }
 
-        
 
 
-        _chSystem.DoStepDynamics(Time.fixedDeltaTime);// currentTime - _oldTime);
+
+        _chSystem.DoStepDynamics(Time.fixedDeltaTime);// 0.001);// Time.fixedDeltaTime);// currentTime - _oldTime);
 
         for(int i = 0; i < _bodies.Count; i++)
         {
@@ -428,7 +428,7 @@ public class ChronoPhysicsManager : MonoBehaviour
         yaw = (yaw > 180.0f) ? (yaw - 360.0f) : ((yaw < -180.0f) ? (yaw + 360.0f) : yaw);
     }
 
-    public Body CreateBody(BodyParams parameters)
+    public Body CreateBody(BodyParams parameters, Vector3 pos, Quaternion rot)
     {
         Body body = new Body();
         body.parameters = parameters;
@@ -439,7 +439,11 @@ public class ChronoPhysicsManager : MonoBehaviour
         chBody.SetInertiaXX(ChronoTools.Vector3ToChVectorD(parameters.diagInertia));
         chBody.SetFrame_COG_to_REF(new ChFrameD(ChronoTools.Vector3ToChVectorD(parameters.cogOffset)));
         chBody.SetCollide(false);
-        
+
+        ChVectorD chPos = ChronoTools.Vector3ToChVectorD(pos);
+        ChQuaternionD chRot = ChronoTools.QuatToChQuat(rot);  
+        chBody.SetFrame_REF_to_abs(new ChFrameD(chPos, chRot));
+
         _chSystem.AddBody(chBody);
 
         body.chBody = chBody;
