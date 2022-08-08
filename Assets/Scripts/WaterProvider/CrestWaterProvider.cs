@@ -12,10 +12,29 @@ internal class CrestWaterProvider : IWaterProvider
     private Vector3[] _queryResult;
     private float _minLength;
 
+    int[] _hashArray;
+    private int _hash;
+
+    private int _queryNumber = 1;
+    private int _currentQuery;
+
+
     public CrestWaterProvider(float minLength)
     {
         _minLength = minLength;
+        _queryNumber = 1;
+        _currentQuery = 0;
     }
+
+    public void SetNumberOfQueries(int nb)
+    {
+        _hashArray = new int[nb];
+        _queryNumber = nb;
+        for (int i = 0; i < nb; i++)
+            _hashArray[i] = HashCode.Combine<CrestWaterProvider, int>(this, i);
+    }
+
+    public void SetSamplingTime(float time) { }
 
     public bool UpdateSamplingList(Vector3[] samplePoints)
     {
@@ -25,6 +44,8 @@ internal class CrestWaterProvider : IWaterProvider
         {
             _result = new float[samplePoints.Length];
             _queryResult = new Vector3[samplePoints.Length];
+            //_hashArray = new Vector3[samplePoints.Length];
+            //_hash = _hashArray.GetHashCode();
         }
 
         if (collProvider == null)
@@ -34,7 +55,10 @@ internal class CrestWaterProvider : IWaterProvider
             return false;
         }
 
-        var status = collProvider.Query(GetHashCode(), _minLength, samplePoints, _queryResult, null, null);
+        //GetHashCode()
+        var status = collProvider.Query(_hashArray[_currentQuery], _minLength, samplePoints, _queryResult, null, null);
+
+        _currentQuery = _currentQuery + 1 < _queryNumber ? ++_currentQuery : 0; 
 
         if (!collProvider.RetrieveSucceeded(status))
         {
@@ -56,7 +80,19 @@ internal class CrestWaterProvider : IWaterProvider
 
     public float GetHeightAt(Vector3 samplePoint)
     {
-        return 0;
+        UpdateSamplingList(new Vector3[] { samplePoint });
+        return GetHeightAt(0);
+
+
+
+        Crest.SampleHeightHelper sampler = new Crest.SampleHeightHelper();
+        sampler.Init(samplePoint);
+        float height;
+        bool status = sampler.Sample(out height);
+        if (!status)
+            Debug.LogError("Bad height sampling");
+
+        return height;
     }
 }
 
