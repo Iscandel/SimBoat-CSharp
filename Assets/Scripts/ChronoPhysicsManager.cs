@@ -91,6 +91,7 @@ public class ChronoPhysicsManager : MonoBehaviour
     private ChSystemSMC _chSystem;
 
     protected double _oldTime;
+    protected double _dt;
 
     protected List<Body> _bodies;
 
@@ -115,19 +116,25 @@ public class ChronoPhysicsManager : MonoBehaviour
         }
     }
 
-    ChForce _force;
+    //private ChForce _force;
 
-    // Start is called before the first frame update
-    void Start()
+    public ChronoPhysicsManager()
     {
         _chSystem = new ChSystemSMC();
         _chSystem.Clear();
         _chSystem.Set_G_acc(new ChVectorD());
+        //_chSystem.SetTimestepperType(ChTimestepper.Type.EULER_IMPLICIT);
         _chSystem.SetTimestepperType(ChTimestepper.Type.RUNGEKUTTA45);
 
         _bodies = new List<Body>();
         _physicsListeners = new List<IPhysicsListener>();
+        _oldTime = 0;
+        _dt = 0;
+    }
 
+    // Start is called before the first frame update
+    void Start()
+    {
         //Initial pos
         //Vector3 pos = transform.position;
         //Quaternion unityQuat = transform.rotation;
@@ -239,9 +246,9 @@ public class ChronoPhysicsManager : MonoBehaviour
         }
 
 
+        _dt = Time.fixedDeltaTime;
 
-
-        _chSystem.DoStepDynamics(Time.fixedDeltaTime);// 0.001);// Time.fixedDeltaTime);// currentTime - _oldTime);
+        _chSystem.DoStepDynamics(_dt);// 0.001);// Time.fixedDeltaTime);// currentTime - _oldTime);
 
         for(int i = 0; i < _bodies.Count; i++)
         {
@@ -310,7 +317,7 @@ public class ChronoPhysicsManager : MonoBehaviour
     {
         TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.START);
         //UpdateForcesTorques(_oldTime + Time.fixedDeltaTime);
-        UpdateForces(_oldTime + Time.fixedDeltaTime);
+        UpdateForces(Time.realtimeSinceStartupAsDouble);// _oldTime + Time.fixedDeltaTime);
         TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.END);
     }
 
@@ -362,12 +369,12 @@ public class ChronoPhysicsManager : MonoBehaviour
         state.angularSpeed = ChronoTools.ChVectorDToVector3(chronoFrame.GetWvel_par());
         state.angularAcc = ChronoTools.ChVectorDToVector3(chronoFrame.GetWacc_par());
 
-        ChVectorD negSpeed_body_old = ChronoTools.Vector3ToChVectorD(-state.speed);
+        ChVectorD negSpeed_body_old = ChronoTools.Vector3ToChVectorD(-state.speed_body);
         ChVectorD speed_body = chronoFrame.TransformDirectionParentToLocal(chronoFrame.GetPos_dt());
         ChVectorD acceleration_body = new ChVectorD(
-                                            (speed_body.x + negSpeed_body_old.x) / (double)Time.fixedDeltaTime,
-                                            (speed_body.x + negSpeed_body_old.x) / (double)Time.fixedDeltaTime,
-                                            (speed_body.x + negSpeed_body_old.x) / (double)Time.fixedDeltaTime);// / (double)Time.fixedDeltaTime;
+                                            (speed_body.x + negSpeed_body_old.x) / _dt,
+                                            (speed_body.y + negSpeed_body_old.y) / _dt,
+                                            (speed_body.z + negSpeed_body_old.z) / _dt);
 
         state.speed_body = ChronoTools.ChVectorDToVector3(speed_body);
         state.acc_body = ChronoTools.ChVectorDToVector3(acceleration_body);
@@ -469,7 +476,7 @@ public class ChronoPhysicsManager : MonoBehaviour
         body.chBody.AddForce(chForce);
         chForce.SetMode(ChForce.ForceType.FORCE);
         //
-        _force = chForce;
+        //_force = chForce;
 
         ChForce chTorque = new ChForce();
         body.chBody.AddForce(chTorque);

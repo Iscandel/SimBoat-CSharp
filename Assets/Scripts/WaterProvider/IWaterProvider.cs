@@ -7,10 +7,10 @@ using UnityEngine;
 
 interface IWaterProvider
 {
-    void SetSamplingTime(float time);
-    bool UpdateSamplingList(Vector3[] samplePoints);
+    public void SetSamplingTime(float time);
+    // bool UpdateSamplingList(Vector3[] samplePoints);
 
-    float GetHeightAt(int listIndex);
-    float GetHeightAt(Vector3 samplePoint);
+    bool SampleHeightAt(Vector3[] samplePoints, ref float[] height);// int listIndex);
+    //float GetHeightAt(Vector3 samplePoint);
 }
 

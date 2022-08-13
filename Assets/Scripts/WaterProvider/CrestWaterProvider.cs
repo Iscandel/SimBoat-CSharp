@@ -36,13 +36,14 @@ internal class CrestWaterProvider : IWaterProvider
 
     public void SetSamplingTime(float time) { }
 
-    public bool UpdateSamplingList(Vector3[] samplePoints)
+    public bool SampleHeightAt(Vector3[] samplePoints, ref float[] heights) 
     {
         var collProvider = Crest.OceanRenderer.Instance?.CollisionProvider;
 
         if (_result == null || (_result != null && samplePoints.Length != _result.Length))
         {
             _result = new float[samplePoints.Length];
+            heights = new float[samplePoints.Length];
             _queryResult = new Vector3[samplePoints.Length];
             //_hashArray = new Vector3[samplePoints.Length];
             //_hash = _hashArray.GetHashCode();
@@ -56,7 +57,7 @@ internal class CrestWaterProvider : IWaterProvider
         }
 
         //GetHashCode()
-        var status = collProvider.Query(_hashArray[_currentQuery], _minLength, samplePoints, _queryResult, null, null);
+        var status = collProvider.Query(_hashArray[_currentQuery], _minLength, samplePoints, heights, null, null);
 
         _currentQuery = _currentQuery + 1 < _queryNumber ? ++_currentQuery : 0; 
 
@@ -67,24 +68,19 @@ internal class CrestWaterProvider : IWaterProvider
             return false;
         }
 
-        for (int i = 0; i < samplePoints.Length; i++)
-            _result[i] = _queryResult[i].y + Crest.OceanRenderer.Instance.SeaLevel;
+        //for (int i = 0; i < samplePoints.Length; i++)
+        //    heights[i] = _queryResult[i].y + Crest.OceanRenderer.Instance.SeaLevel;
 
         return true;
     }
 
-    public float GetHeightAt(int listIndex)
-    {
-        return _result[listIndex];
-    }
+    //public float GetHeightAt(int listIndex)
+    //{
+    //    return _result[listIndex];
+    //}
 
     public float GetHeightAt(Vector3 samplePoint)
     {
-        UpdateSamplingList(new Vector3[] { samplePoint });
-        return GetHeightAt(0);
-
-
-
         Crest.SampleHeightHelper sampler = new Crest.SampleHeightHelper();
         sampler.Init(samplePoint);
         float height;
@@ -94,5 +90,6 @@ internal class CrestWaterProvider : IWaterProvider
 
         return height;
     }
+
 }
 
