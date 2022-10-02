@@ -8,6 +8,7 @@ using UnityEngine;
 
 class MathTools
 {
+    public const float RPM_TO_RPS = 1.0f / 60;
     public static Vector3 UnityToNED(float x, float y, float z)
     {
         return new Vector3(z, x, -y);

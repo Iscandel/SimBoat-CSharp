@@ -1343,7 +1343,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!54 &1991022211
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1462,6 +1462,8 @@ MonoBehaviour:
   _thrustAppliPoint: {x: 0, y: 0, z: 0}
   _maxThrust: 12000
   _maxRudderAngle: 15
+  _maxPropellerRPM: 5000
+  _propellerDiameter: 0
 --- !u!23 &1421735959497780736
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1543,7 +1545,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!64 &4824023922474512719
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1747,8 +1749,10 @@ MonoBehaviour:
   _diagInertia: {x: 150, y: 150, z: 50}
   _refFrame: 0
   _computeHydrodynamics: 1
-  _isDebug: 1
+  _isDebug: 0
   _approximateMode: 1
   _thrustAppliPoint: {x: 0, y: 0, z: 0}
   _maxThrust: 12000
   _maxRudderAngle: 15
+  _maxPropellerRPM: 5000
+  _propellerDiameter: 0

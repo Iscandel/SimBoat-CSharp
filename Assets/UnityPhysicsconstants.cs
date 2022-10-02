@@ -11,4 +11,6 @@ class UnityPhysicsConstants
     public static readonly Vector3 G = new Vector3(0, -9.81f, 0);
 
     public static readonly float RHO = 1026;
+
+    public static readonly float RHO_AIR = 1.225f;
 }

@@ -14,6 +14,6 @@ class WaterController
 
     public static float GetPosY(Vector3 pos, float time )
     {
-        return MathF.Sin((-_waveVelocity * time + pos.x) / _wavelength) * _waterHeight + MathF.Sin((-_waveVelocity * 1.5f * time + pos.x) / _wavelength / 3) * _waterHeight + MathF.Sin((-_waveVelocity / 4.0f * time + pos.x) / _wavelength / 2) * _waterHeight * 1.3f; ;
+        return Mathf.Sin((-_waveVelocity * time + pos.x) / _wavelength) * _waterHeight + Mathf.Sin((-_waveVelocity * 1.5f * time + pos.x) / _wavelength / 3) * _waterHeight + Mathf.Sin((-_waveVelocity / 4.0f * time + pos.x) / _wavelength / 2) * _waterHeight * 1.3f; ;
     }
 }
