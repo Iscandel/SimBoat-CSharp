@@ -5,12 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-interface IWaterProvider
+//interface IWaterProvider
+public abstract class IWaterProvider : MonoBehaviour
 {
-    public void SetSamplingTime(float time);
+    public abstract void SetSamplingTime(float time);
     // bool UpdateSamplingList(Vector3[] samplePoints);
 
-    bool SampleHeightAt(Vector3[] samplePoints, ref float[] height);// int listIndex);
+    public abstract bool SampleHeightAt(Vector3[] samplePoints, ref float[] height);// int listIndex);
     //float GetHeightAt(Vector3 samplePoint);
 }
 

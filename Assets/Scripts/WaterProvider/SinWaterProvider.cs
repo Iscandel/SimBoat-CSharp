@@ -15,7 +15,7 @@ class SinWaterProvider : IWaterProvider
         _samplingTime = 0;
     }
 
-    public void SetSamplingTime(float time) 
+    public override void SetSamplingTime(float time) 
     {
         _samplingTime = time;
     }
@@ -30,7 +30,7 @@ class SinWaterProvider : IWaterProvider
     //    return _samplingList[listIndex];
     //}
 
-    public bool SampleHeightAt(Vector3[] samplePoints, ref float[] heights)
+    public override bool SampleHeightAt(Vector3[] samplePoints, ref float[] heights)
     {
         if(samplePoints.Length == 0)
             return false;

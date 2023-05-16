@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 
-internal class CrestWaterProvider : IWaterProvider
+public class CrestWaterProvider : IWaterProvider
 {
     private float[] _result;
     private Vector3[] _queryResult;
@@ -34,9 +34,9 @@ internal class CrestWaterProvider : IWaterProvider
             _hashArray[i] = HashCode.Combine<CrestWaterProvider, int>(this, i);
     }
 
-    public void SetSamplingTime(float time) { }
+    public override void SetSamplingTime(float time) { }
 
-    public bool SampleHeightAt(Vector3[] samplePoints, ref float[] heights) 
+    public override bool SampleHeightAt(Vector3[] samplePoints, ref float[] heights) 
     {
         var collProvider = Crest.OceanRenderer.Instance?.CollisionProvider;
 

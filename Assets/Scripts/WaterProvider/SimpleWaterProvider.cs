@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 
-internal class SimpleWaterProvider : IWaterProvider
+public class SimpleWaterProvider : IWaterProvider
 {
     private float _waterLevel;
 
@@ -15,9 +15,9 @@ internal class SimpleWaterProvider : IWaterProvider
         _waterLevel = height;
     }
 
-    public void SetSamplingTime(float time) { }
+    public override void SetSamplingTime(float time) { }
 
-    public bool SampleHeightAt(Vector3[] samplePoints, ref float[] heights)
+    public override bool SampleHeightAt(Vector3[] samplePoints, ref float[] heights)
     {
         for(int i = 0; i < samplePoints.Length; i++) 
         {

@@ -123,12 +123,19 @@ class BoatForcesUnity : MonoBehaviour
 
     private float _waterHeightPropellerPos;
 
-    private Vector3[] _lastSpeedAtTriangle;
-    private float[] _lastArea;
+    //private Vector3[] _lastSpeedAtTriangle;
+    //private float[] _lastArea;
+    private Vector3[] _speedAtOrigTriangle;
+    private Vector3[] _lastSpeedAtOrigTriangle;
+    private float[] _lastOrigArea;
+    private float[] _origArea;
 
 
     // REMOVE
     Crest.SampleHeightHelper _samplerTest;
+
+    public float Surface { get => _surface; set => _surface = value; }
+    public float SubmergedSurface { get => _submergedSurface; set => _submergedSurface = value; }
 
     // Start is called before the first frame update
     void Start()
@@ -137,7 +144,12 @@ class BoatForcesUnity : MonoBehaviour
         _trianglesAndVertices = new DepthTriangle[_mesh.triangles.Length / 3];
         _submergedTriangles = new List<DepthTriangle>();
 
-        _underwaterMesh = this.transform.GetChild(0).GetComponent<MeshFilter>().mesh;//.AddComponent<GameObject>(); 
+        _underwaterMesh = this.transform.GetChild(0).GetComponent<MeshFilter>().mesh;//.AddComponent<GameObject>();
+                                                                                     
+        _speedAtOrigTriangle = new Vector3[_trianglesAndVertices.Length];
+        _lastSpeedAtOrigTriangle = new Vector3[_trianglesAndVertices.Length];
+        _lastOrigArea = new float[_trianglesAndVertices.Length];
+        _origArea = new float[_trianglesAndVertices.Length];
 
         Vector3[] vertices = _mesh.vertices;
         for (int i = 0; i < _trianglesAndVertices.Length; i++)
@@ -147,16 +159,23 @@ class BoatForcesUnity : MonoBehaviour
             Vector3 worldVertex1 = transform.TransformPoint(vertices[indices[1]]);
             Vector3 worldVertex2 = transform.TransformPoint(vertices[indices[2]]);
 
-            _surface += GeometryTools.ComputeTriangleArea(worldVertex0, worldVertex1, worldVertex2);
+            Surface += GeometryTools.ComputeTriangleArea(worldVertex0, worldVertex1, worldVertex2);
+
+            _speedAtOrigTriangle[i] = new Vector3(0,0,0);
+            _lastSpeedAtOrigTriangle[i] = new Vector3(0,0,0);
+            _lastOrigArea[i] = 0;
+            _origArea[i] = 0;
         }
 
-        _lastSpeedAtTriangle = new Vector3[_trianglesAndVertices.Length];
-        _lastArea = new float[_trianglesAndVertices.Length];
+        //_lastSpeedAtTriangle = new Vector3[_trianglesAndVertices.Length];
+        //_lastArea = new float[_trianglesAndVertices.Length];
 
+        GameObject[] oceanGO = GameObject.FindGameObjectsWithTag("Ocean");
+        _waterProvider = oceanGO[0].GetComponent<IWaterProvider>();
         //_waterProvider = new SimpleWaterProvider(0);
-        //_waterProvider = new SinWaterProvider();
-        _waterProvider = new CrestWaterProvider(0);
-        ((CrestWaterProvider)_waterProvider).SetNumberOfQueries(1);
+    //_waterProvider = new SinWaterProvider();
+    //_waterProvider = new CrestWaterProvider(0);
+     //   ((CrestWaterProvider)_waterProvider).SetNumberOfQueries(1);
 
         // TODO
         _samplerTest = new Crest.SampleHeightHelper();
@@ -173,7 +192,7 @@ class BoatForcesUnity : MonoBehaviour
         _rudderAngle = 0;
         _thrustAppliPoint = new Vector3(0, -0.4f, -1.9f);
         _propellerRPM = 0;
-        _propellerEfficiency = 1 / (_maxPropellerRPM * MathTools.RPM_TO_RPS) * _maxThrust;
+        _propellerEfficiency = 0.25f;// 1 / (_maxPropellerRPM * MathTools.RPM_TO_RPS) * _maxThrust;
         _propellerDiameter = 0.25f;
         _thrustDirection = new Vector3(0, 0, 1);
 
@@ -193,7 +212,7 @@ class BoatForcesUnity : MonoBehaviour
         //Debug.Log("thrust " + thrust);
 
         if (Input.GetKey(KeyCode.Z))
-            thrust = 1;
+            thrust = 1f;
         else thrust = Input.GetAxis("Accelerate");
 
 
@@ -208,7 +227,7 @@ class BoatForcesUnity : MonoBehaviour
         else
             angle = -Input.GetAxis("Horizontal");
 
-        Debug.Log("Horizontal " + angle * _maxRudderAngle);
+        //Debug.Log("Horizontal " + angle * _maxRudderAngle);
         _rudderAngle = angle * _maxRudderAngle;
 
         //if (_fixTimeScale)
@@ -231,6 +250,7 @@ class BoatForcesUnity : MonoBehaviour
 
     void FixedUpdate()
     {
+        Debug.Log(transform.InverseTransformDirection(_rigidbody.velocity));
         //_waterProvider.SetSamplingTime(Time.fixedTime);
 
         List<Force> allForces = new List<Force>();
@@ -256,7 +276,7 @@ class BoatForcesUnity : MonoBehaviour
 
         if (_computeHydrodynamics)
         {
-            allForces.AddRange(ComputeEmpiricalDrag());
+            //allForces.AddRange(ComputeEmpiricalDrag());
             //allForces.AddRange(ComputeHydrodynamics());        
         }
 
@@ -280,7 +300,7 @@ class BoatForcesUnity : MonoBehaviour
 
         //Debug.Log("unity " + sumForces + " and " + _rigidbody.velocity + " and " + transform.position);
 
-        (Vector3 damping2, Vector3 torque) = ComputeDamping2(_submergedSurface, _surface, _rigidbody.velocity, _rigidbody.angularVelocity, transform.position);
+        //(Vector3 damping2, Vector3 torque) = ComputeDamping2(_submergedSurface, _surface, _rigidbody.velocity, _rigidbody.angularVelocity, transform.position);
         //(Vector3 damping2, Vector3 torque) = ComputeDamping3(_rigidbody.velocity, _rigidbody.angularVelocity);
         //_rigidbody.AddForce(damping2);
         //_rigidbody.AddTorque(torque);
@@ -329,14 +349,14 @@ class BoatForcesUnity : MonoBehaviour
         float RHO = worldThrustPosition.y < _waterHeightPropellerPos ? UnityPhysicsConstants.RHO : UnityPhysicsConstants.RHO_AIR;
         float thrust = _propellerEfficiency * RHO * n2 * Mathf.Pow(_propellerDiameter, 4);
         Vector3 thrustForce = transform.rotation * thrustDirection * thrust;
+        //thrustForce = transform.rotation * rotRudder * new Vector3(0, 0.5f, 0.5f) * 20000;//
 
-
-        Debug.Log("thruster : " + worldThrustPosition + " " + _waterHeightPropellerPos + " " + thrustForce);
+        //Debug.Log("thruster : " + worldThrustPosition + " " + _waterHeightPropellerPos + " " + thrustForce);
         // F = Cf * rho * n*n * D^4
         // n is the propeller RPS
         Force force;
-        force.force = thrustForce;
-        force.appliPoint = worldThrustPosition;
+        force.force =  thrustForce;
+        force.appliPoint = worldThrustPosition;// _rigidbody.worldCenterOfMass;// worldThrustPosition;
 
         return force;
     }
@@ -450,18 +470,21 @@ class BoatForcesUnity : MonoBehaviour
     {
         Vector3 force;
         float RHO = UnityPhysicsConstants.RHO;
-        float referenceArea = _submergedSurface / 4;
+        float referenceArea = Surface;// _submergedSurface / 4;
         float Cdx = 1.05f * 10;
         float Cdy = 1.5f * 10;
         float Cdz = 0.5f * 10;
+        float Cax = 0;
+        float Cay = 0;
+        float Caz = 1;
         force.x = -0.5f * RHO * referenceArea * Cdx * Mathf.Abs(speed_body.x) * speed_body.x;
         force.y = -0.5f * RHO * referenceArea * Cdy * Mathf.Abs(speed_body.y) * speed_body.y;
         force.z = -0.5f * RHO * referenceArea * Cdz * Mathf.Abs(speed_body.z) * speed_body.z;
 
         Vector3 torque;
-        torque.x = -0.5f * RHO * referenceArea * Cdx / 5 * Mathf.Abs(angularSpeed.x) * angularSpeed.x;
-        torque.y = -0.5f * RHO * referenceArea * Cdy / 5 * Mathf.Abs(angularSpeed.y) * angularSpeed.y;
-        torque.z = -0.5f * RHO * referenceArea * Cdz / 5 * Mathf.Abs(angularSpeed.z) * angularSpeed.z;
+        torque.x = -0.5f * RHO * referenceArea * Cax * Mathf.Abs(angularSpeed.x) * angularSpeed.x;
+        torque.y = -0.5f * RHO * referenceArea * Cay * Mathf.Abs(angularSpeed.y) * angularSpeed.y;
+        torque.z = -0.5f * RHO * referenceArea * Caz * Mathf.Abs(angularSpeed.z) * angularSpeed.z;
 
         return (force, torque);
     }
@@ -510,14 +533,14 @@ class BoatForcesUnity : MonoBehaviour
 
 
         Vector3 Fd = new Vector3(0, 0, 0);
-        float Cpd1 = 1000;
-        float Cpd2 = 1000;
+        float Cpd1 = 100;
+        float Cpd2 = 100;
         float vi = speedAtTriangle.magnitude;
         float vr = 1;
         float fp = 0.4f;
         float cosTheta = Vector3.Dot(speedAtTriangle.normalized, normal);
-        float Csd1 = 1000;
-        float Csd2 = 1000;
+        float Csd1 = 100;
+        float Csd2 = 100;
         float fs = 0.4f;
         if (cosTheta >= 0)
         {
@@ -534,16 +557,17 @@ class BoatForcesUnity : MonoBehaviour
         return force;
     }
 
-    Force ComputeSlammingForces(Vector3 velocity, Vector3 lastVelocity, Vector3 normal, float areaSub, float lastAreaSub, float area, float dt, float tauMax, Vector3 center)
+    Force ComputeSlammingForces(Vector3 origVelocity, Vector3 lastOrigVelocity, Vector3 submergedVelocity, 
+        Vector3 normal, float areaOrig, float lastAreaOrig, float triangleArea, float totalArea, float dt, float tauMax, Vector3 center)
     {
-        float cosTheta = Vector3.Dot(velocity.normalized, normal);
+        float cosTheta = Vector3.Dot(origVelocity.normalized, normal);
         if (cosTheta < 0)
             return new Force();
 
-        Vector3 tauVec = areaSub * velocity - lastAreaSub * lastVelocity / (area * dt);
+        Vector3 tauVec = areaOrig * origVelocity - lastAreaOrig * lastOrigVelocity / (triangleArea * dt);
         float tau = tauVec.magnitude;
 
-        Vector3 FStopping = _mass * velocity * 2 * areaSub / area;
+        Vector3 FStopping = _mass * submergedVelocity * 2 * areaOrig / totalArea;
         int p = 2;
         Force force;
         force.force = -Mathf.Pow(Mathf.Clamp01(tau / tauMax), p) * cosTheta * FStopping;
@@ -589,6 +613,20 @@ class BoatForcesUnity : MonoBehaviour
 
             forces.Add(viscousForce);
             forces.Add(pressureForce);
+
+
+            //float viscousDragCoeff = 0.05f;// .0f;
+            //viscousForce.force = -(1 - Mathf.Abs(cosTheta)) * viscousDragCoeff * speedAtTriangle * UnityPhysicsConstants.RHO * area;
+            //viscousForce.appliPoint = center;
+
+            //// Pressure force acts orthogonally to the surface and is stronger for theta ~ 0 or 180 deg
+            //Force pressureForce;
+
+            //Vector3 Fd = new Vector3(0, 0, 0);
+            //float vi = speedAtTriangle.magnitude;
+            //float Cd = 25.0f;// 2.0f;
+            //float halfRhoS = 0.5f * UnityPhysicsConstants.RHO * area;
+            //float vr = 8;
         }
 
         return forces;
@@ -608,17 +646,21 @@ class BoatForcesUnity : MonoBehaviour
             forces.Add(ComputePressureDrag(speedAtTriangle, area, triangle.normal, center));
 
 
-            Vector3 lastSpeedAtTriangle = _lastSpeedAtTriangle[triangle.surfaceTriIndex];
-            float lastArea = _lastArea[triangle.surfaceTriIndex];
+            Vector3 speedAtOrigTriangle = _speedAtOrigTriangle[triangle.surfaceTriIndex];
+            Vector3 lastSpeedAtOrigTriangle = _lastSpeedAtOrigTriangle[triangle.surfaceTriIndex];
+            float origArea = _origArea[triangle.surfaceTriIndex];
+            float lastOrigArea = _lastOrigArea[triangle.surfaceTriIndex];
+            
             float dt = Time.fixedDeltaTime;
             float tauMax = 2;
-            float fullArea = GeometryTools.ComputeTriangleArea(_trianglesAndVertices[triangle.surfaceTriIndex].p0,
+            float triangleArea = GeometryTools.ComputeTriangleArea(_trianglesAndVertices[triangle.surfaceTriIndex].p0,
                                                                _trianglesAndVertices[triangle.surfaceTriIndex].p1,
                                                                _trianglesAndVertices[triangle.surfaceTriIndex].p2);
-            forces.Add(ComputeSlammingForces(speedAtTriangle, lastSpeedAtTriangle, triangle.normal, area, lastArea, fullArea, dt, tauMax, center));
+            forces.Add(ComputeSlammingForces(speedAtOrigTriangle, lastSpeedAtOrigTriangle, speedAtTriangle, triangle.normal,origArea, 
+                lastOrigArea, triangleArea, Surface, dt, tauMax, center));
 
-            _lastSpeedAtTriangle[triangle.surfaceTriIndex] = speedAtTriangle;
-            _lastArea[triangle.surfaceTriIndex] = area;
+            //_lastSpeedAtTriangle[triangle.surfaceTriIndex] = speedAtTriangle;
+            //_lastArea[triangle.surfaceTriIndex] = area;
         }
 
 
@@ -698,6 +740,14 @@ class BoatForcesUnity : MonoBehaviour
             Vector3 worldVertex0 = transform.TransformPoint(vertices[indices[0]]);
             Vector3 worldVertex1 = transform.TransformPoint(vertices[indices[1]]);
             Vector3 worldVertex2 = transform.TransformPoint(vertices[indices[2]]);
+
+            Vector3 center = GeometryTools.ComputeCentroid(worldVertex0, worldVertex1, worldVertex2);
+            Vector3 r = center - _rigidbody.worldCenterOfMass;
+            Vector3 speedAtTriangle = _rigidbody.velocity + Vector3.Cross(_rigidbody.angularVelocity, r);
+            _lastSpeedAtOrigTriangle[i] = _speedAtOrigTriangle[i];
+            _speedAtOrigTriangle[i] = speedAtTriangle;
+            _lastOrigArea[i] = _origArea[i];
+            
 
             //See if we keep
             //Vector3[] samplingList = new Vector3[_trianglesAndVertices.Length * 3];
@@ -783,6 +833,9 @@ class BoatForcesUnity : MonoBehaviour
                     _submergedTriangles.Add(waterTriangle1);
                     _submergedTriangles.Add(waterTriangle2);
 
+                    _origArea[i] = GeometryTools.ComputeTriangleArea(waterTriangle1.p0, waterTriangle1.p1, waterTriangle1.p2) +
+                                   GeometryTools.ComputeTriangleArea(waterTriangle2.p0, waterTriangle2.p1, waterTriangle2.p2);
+
                 } //1 underwater
                 else if (M.h > 0 && L.h < 0)
                 {
@@ -813,10 +866,16 @@ class BoatForcesUnity : MonoBehaviour
                         _submergedTriangles.Add(new DepthTriangle(jh, jm, L.vertex, heightJh, heightJm, L.h, tmpNormal, i));
                     else
                         _submergedTriangles.Add(new DepthTriangle(jh, L.vertex, jm, heightJh, L.h, heightJm, -tmpNormal, i));
+
+                    _origArea[i] = GeometryTools.ComputeTriangleArea(_submergedTriangles.Last().p0, _submergedTriangles.Last().p1, _submergedTriangles.Last().p2);
                 }
             }
             else if (H.h < 0 && M.h < 0 && L.h < 0)
+            {
                 _submergedTriangles.Add(new DepthTriangle(worldVertex0, worldVertex1, worldVertex2, height0, height1, height2, geometricNormal, i));
+
+                _origArea[i] = GeometryTools.ComputeTriangleArea(_submergedTriangles.Last().p0, _submergedTriangles.Last().p1, _submergedTriangles.Last().p2);
+            }
         }
 
         List<Force> forces = new List<Force>();
