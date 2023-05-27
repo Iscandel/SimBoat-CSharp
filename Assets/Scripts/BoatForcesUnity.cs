@@ -130,6 +130,15 @@ class BoatForcesUnity : MonoBehaviour
     private float[] _lastOrigArea;
     private float[] _origArea;
 
+    // Hydrodynamics
+    public float _Cpd1 = 100;
+    public float _Cpd2 = 100;
+    public float _vr = 1;
+    public float _fp = 0.4f;
+    public float _Csd1 = 100;
+    public float _Csd2 = 100;
+    public float _fs = 0.4f;
+
 
     // REMOVE
     Crest.SampleHeightHelper _samplerTest;
@@ -144,6 +153,7 @@ class BoatForcesUnity : MonoBehaviour
         _trianglesAndVertices = new DepthTriangle[_mesh.triangles.Length / 3];
         _submergedTriangles = new List<DepthTriangle>();
 
+        this.transform.GetChild(0).GetComponent<MeshFilter>().name = "underwater";
         _underwaterMesh = this.transform.GetChild(0).GetComponent<MeshFilter>().mesh;//.AddComponent<GameObject>();
                                                                                      
         _speedAtOrigTriangle = new Vector3[_trianglesAndVertices.Length];
@@ -187,7 +197,7 @@ class BoatForcesUnity : MonoBehaviour
         _rigidbody.detectCollisions = false;
         _rigidbody.inertiaTensor = _diagInertia;
         _rigidbody.mass = _mass;
-        //_rigidbody.centerOfMass = _cogOffset;
+        _rigidbody.centerOfMass = _cogOffset;
 
         _rudderAngle = 0;
         _thrustAppliPoint = new Vector3(0, -0.4f, -1.9f);
@@ -277,7 +287,7 @@ class BoatForcesUnity : MonoBehaviour
         if (_computeHydrodynamics)
         {
             //allForces.AddRange(ComputeEmpiricalDrag());
-            //allForces.AddRange(ComputeHydrodynamics());        
+            allForces.AddRange(ComputeHydrodynamics());        
         }
 
         if (allForces[allForces.Count - 1].force.y > 100000)
@@ -376,22 +386,26 @@ class BoatForcesUnity : MonoBehaviour
 
         List<Force> forces = new List<Force>();
 
+        //
+        //Matrix4x4 toTransform = transform.worldToLocalMatrix;
+        Matrix4x4 toTransform = Matrix4x4.identity;
+
         _submergedSurface = 0;
         foreach (DepthTriangle triangle in _submergedTriangles)
         {
-            uvertices.Add(transform.InverseTransformPoint(triangle.p0));
-            unormals.Add(transform.InverseTransformDirection(triangle.normal));
+            uvertices.Add(toTransform.MultiplyPoint(triangle.p0));
+            unormals.Add(toTransform.MultiplyVector(triangle.normal));
             utri.Add(uvertices.Count - 1);
             ucolor.Add(col);
-            uvertices.Add(transform.InverseTransformPoint(triangle.p1));
-            unormals.Add(transform.InverseTransformDirection(triangle.normal));
+            uvertices.Add(toTransform.MultiplyPoint(triangle.p1));
+            unormals.Add(toTransform.MultiplyVector(triangle.normal));
             utri.Add(uvertices.Count - 1);
             ucolor.Add(col);
-            uvertices.Add(transform.InverseTransformPoint(triangle.p2));
-            unormals.Add(transform.InverseTransformDirection(triangle.normal));
+            uvertices.Add(toTransform.MultiplyPoint(triangle.p2));
+            unormals.Add(toTransform.MultiplyVector(triangle.normal));
             utri.Add(uvertices.Count - 1);
             ucolor.Add(col);
-
+            
 
             _underwaterMesh.Clear();
             _underwaterMesh.name = "underwater mesh";
@@ -409,96 +423,96 @@ class BoatForcesUnity : MonoBehaviour
         Vector3 torque = new Vector3();
 
         force.force = _mass * UnityPhysicsConstants.G;
-        force.appliPoint = this.transform.position;
+        force.appliPoint = _rigidbody.worldCenterOfMass;// this.transform.position;
 
         //Debug.Log(force.y);
 
         return force;
     }
 
-    Force ComputeDamping(float submergedSurface, float totalSurface, Vector3 speed_value, Vector3 cog)
-    {
-        Force force;
-        const float Cdamp = 1000;
-        float rs = submergedSurface / totalSurface;
-        force.force = -Cdamp * rs * speed_value;
+    //Force ComputeDamping(float submergedSurface, float totalSurface, Vector3 speed_value, Vector3 cog)
+    //{
+    //    Force force;
+    //    const float Cdamp = 1000;
+    //    float rs = submergedSurface / totalSurface;
+    //    force.force = -Cdamp * rs * speed_value;
 
-        //Ok ?
-        force.appliPoint = cog;
+    //    //Ok ?
+    //    force.appliPoint = cog;
 
-        return force;
-    }
+    //    return force;
+    //}
 
-    (Vector3, Vector3) ComputeDampingBis(float submergedSurface, float totalSurface, Vector3 speed_value, Vector3 angularSpeed)
-    {
-        const float Cdamp = 1000;
-        float rs = submergedSurface / totalSurface;
-        Vector3 force = -Cdamp * rs * speed_value;
+    //(Vector3, Vector3) ComputeDampingBis(float submergedSurface, float totalSurface, Vector3 speed_value, Vector3 angularSpeed)
+    //{
+    //    const float Cdamp = 1000;
+    //    float rs = submergedSurface / totalSurface;
+    //    Vector3 force = -Cdamp * rs * speed_value;
 
-        //Ok ?
-        Vector3 torque = -Cdamp * 0.0001f * rs * angularSpeed;
+    //    //Ok ?
+    //    Vector3 torque = -Cdamp * 0.0001f * rs * angularSpeed;
 
-        return (force, torque);
-    }
+    //    return (force, torque);
+    //}
 
-    public (Vector3, Vector3) ComputeDamping2(float submergedSurface, float totalSurface, Vector3 speed_value, Vector3 angularSpeed, Vector3 cog)
-    {
-        // Linear drag coefficients
-        float cDampL1 = 1000f;
-        float cDampR1 = 100f;
+    //public (Vector3, Vector3) ComputeDamping2(float submergedSurface, float totalSurface, Vector3 speed_value, Vector3 angularSpeed, Vector3 cog)
+    //{
+    //    // Linear drag coefficients
+    //    float cDampL1 = 1000f;
+    //    float cDampR1 = 100f;
 
-        // Quadratic drag coefficients
-        float cDampL2 = 100f;
-        float cDampR2 = 10f;
+    //    // Quadratic drag coefficients
+    //    float cDampL2 = 100f;
+    //    float cDampR2 = 10f;
 
-        float area = totalSurface;
-        float subArea = submergedSurface;
-        float rs = subArea / area;
+    //    float area = totalSurface;
+    //    float subArea = submergedSurface;
+    //    float rs = subArea / area;
 
-        // Force
-        float linSpeed = speed_value.magnitude;
-        float cL = -rs * (cDampL1 + cDampL2 * linSpeed);
-        Vector3 force = speed_value * cL;
+    //    // Force
+    //    float linSpeed = speed_value.magnitude;
+    //    float cL = -rs * (cDampL1 + cDampL2 * linSpeed);
+    //    Vector3 force = speed_value * cL;
 
-        float angSpeed = angularSpeed.magnitude;
-        float cR = -rs * (cDampR1 + cDampR2 * angSpeed);
-        Vector3 torque = angularSpeed * cR;
-        return (force, torque);
-    }
+    //    float angSpeed = angularSpeed.magnitude;
+    //    float cR = -rs * (cDampR1 + cDampR2 * angSpeed);
+    //    Vector3 torque = angularSpeed * cR;
+    //    return (force, torque);
+    //}
 
-    public (Vector3, Vector3) ComputeDamping3(Vector3 speed_body, Vector3 angularSpeed)
-    {
-        Vector3 force;
-        float RHO = UnityPhysicsConstants.RHO;
-        float referenceArea = Surface;// _submergedSurface / 4;
-        float Cdx = 1.05f * 10;
-        float Cdy = 1.5f * 10;
-        float Cdz = 0.5f * 10;
-        float Cax = 0;
-        float Cay = 0;
-        float Caz = 1;
-        force.x = -0.5f * RHO * referenceArea * Cdx * Mathf.Abs(speed_body.x) * speed_body.x;
-        force.y = -0.5f * RHO * referenceArea * Cdy * Mathf.Abs(speed_body.y) * speed_body.y;
-        force.z = -0.5f * RHO * referenceArea * Cdz * Mathf.Abs(speed_body.z) * speed_body.z;
+    //public (Vector3, Vector3) ComputeDamping3(Vector3 speed_body, Vector3 angularSpeed)
+    //{
+    //    Vector3 force;
+    //    float RHO = UnityPhysicsConstants.RHO;
+    //    float referenceArea = Surface;// _submergedSurface / 4;
+    //    float Cdx = 1.05f * 10;
+    //    float Cdy = 1.5f * 10;
+    //    float Cdz = 0.5f * 10;
+    //    float Cax = 0;
+    //    float Cay = 0;
+    //    float Caz = 1;
+    //    force.x = -0.5f * RHO * referenceArea * Cdx * Mathf.Abs(speed_body.x) * speed_body.x;
+    //    force.y = -0.5f * RHO * referenceArea * Cdy * Mathf.Abs(speed_body.y) * speed_body.y;
+    //    force.z = -0.5f * RHO * referenceArea * Cdz * Mathf.Abs(speed_body.z) * speed_body.z;
 
-        Vector3 torque;
-        torque.x = -0.5f * RHO * referenceArea * Cax * Mathf.Abs(angularSpeed.x) * angularSpeed.x;
-        torque.y = -0.5f * RHO * referenceArea * Cay * Mathf.Abs(angularSpeed.y) * angularSpeed.y;
-        torque.z = -0.5f * RHO * referenceArea * Caz * Mathf.Abs(angularSpeed.z) * angularSpeed.z;
+    //    Vector3 torque;
+    //    torque.x = -0.5f * RHO * referenceArea * Cax * Mathf.Abs(angularSpeed.x) * angularSpeed.x;
+    //    torque.y = -0.5f * RHO * referenceArea * Cay * Mathf.Abs(angularSpeed.y) * angularSpeed.y;
+    //    torque.z = -0.5f * RHO * referenceArea * Caz * Mathf.Abs(angularSpeed.z) * angularSpeed.z;
 
-        return (force, torque);
-    }
+    //    return (force, torque);
+    //}
 
     Force ComputeViscousDrag(Vector3 speedAtTriangle, float area, Vector3 normal, Vector3 center)
     {
         Force force;
 
-        float viscousDragCoeff = 1.0f;
-        float cosTheta = Vector3.Dot(speedAtTriangle.normalized, normal);
-        force.force = -(1 - Mathf.Abs(cosTheta)) * viscousDragCoeff * speedAtTriangle * area;
+        //float viscousDragCoeff = 1.0f;
+        //float cosTheta = Vector3.Dot(speedAtTriangle.normalized, normal);
+        //force.force = -(1 - Mathf.Abs(cosTheta)) * viscousDragCoeff * speedAtTriangle * area;
 
-        force.appliPoint = center;
-        return force;
+        //force.appliPoint = center;
+        //return force;
 
         float RHO = UnityPhysicsConstants.RHO;
 
@@ -533,22 +547,22 @@ class BoatForcesUnity : MonoBehaviour
 
 
         Vector3 Fd = new Vector3(0, 0, 0);
-        float Cpd1 = 100;
-        float Cpd2 = 100;
+        //float Cpd1 = 100;
+        //float Cpd2 = 100;
         float vi = speedAtTriangle.magnitude;
-        float vr = 1;
-        float fp = 0.4f;
+        //float vr = 1;
+        //float fp = 0.4f;
         float cosTheta = Vector3.Dot(speedAtTriangle.normalized, normal);
-        float Csd1 = 100;
-        float Csd2 = 100;
-        float fs = 0.4f;
+        //float Csd1 = 100;
+        //float Csd2 = 100;
+        //float fs = 0.4f;
         if (cosTheta >= 0)
         {
-            Fd = -(Cpd1 * vi / vr + Cpd2 * (float)Math.Pow(vi / vr, 2)) * area * (float)Math.Pow(cosTheta, fp) * normal;
+            Fd = -(_Cpd1 * vi / _vr + _Cpd2 * (float)Math.Pow(vi / _vr, 2)) * area * (float)Math.Pow(cosTheta, _fp) * normal;
         }
         else
         {
-            Fd = (Csd1 * vi / vr + Csd2 * (float)Math.Pow(vi / vr, 2)) * area * (float)Math.Pow(-cosTheta, fs) * normal;
+            Fd = (_Csd1 * vi / _vr + _Csd2 * (float)Math.Pow(vi / _vr, 2)) * area * (float)Math.Pow(-cosTheta, _fs) * normal;
         }
 
         force.force = Fd;
@@ -605,8 +619,8 @@ class BoatForcesUnity : MonoBehaviour
             float vi = speedAtTriangle.magnitude;
             float Cd = 2.0f;
             float halfRhoS = 0.5f * UnityPhysicsConstants.RHO * area;
-            float vr = 1;
-            float vel = vi / vr;
+            //float vr = 1;
+            float vel = vi / _vr;
             Fd = -halfRhoS * Cd * vel * cosTheta * triangle.normal;
             pressureForce.force = Fd;
             pressureForce.appliPoint = center;
@@ -635,16 +649,17 @@ class BoatForcesUnity : MonoBehaviour
     List<Force> ComputeHydrodynamics()
     {
         List<Force> forces = new List<Force>();
-
+        Vector3 hydroSum = new Vector3();
         foreach (DepthTriangle triangle in _submergedTriangles)
         {
             float area = GeometryTools.ComputeTriangleArea(triangle.p0, triangle.p1, triangle.p2);
             Vector3 center = GeometryTools.ComputeCentroid(triangle.p0, triangle.p1, triangle.p2);
             Vector3 r = center - _rigidbody.worldCenterOfMass;
             Vector3 speedAtTriangle = _rigidbody.velocity + Vector3.Cross(_rigidbody.angularVelocity, r);
-            forces.Add(ComputeViscousDrag(speedAtTriangle, area, triangle.normal, center));
+            //forces.Add(ComputeViscousDrag(speedAtTriangle, area, triangle.normal, center));
             forces.Add(ComputePressureDrag(speedAtTriangle, area, triangle.normal, center));
-
+            //hydroSum += forces.Last<Force>().force;
+            
 
             Vector3 speedAtOrigTriangle = _speedAtOrigTriangle[triangle.surfaceTriIndex];
             Vector3 lastSpeedAtOrigTriangle = _lastSpeedAtOrigTriangle[triangle.surfaceTriIndex];
@@ -656,9 +671,10 @@ class BoatForcesUnity : MonoBehaviour
             float triangleArea = GeometryTools.ComputeTriangleArea(_trianglesAndVertices[triangle.surfaceTriIndex].p0,
                                                                _trianglesAndVertices[triangle.surfaceTriIndex].p1,
                                                                _trianglesAndVertices[triangle.surfaceTriIndex].p2);
-            forces.Add(ComputeSlammingForces(speedAtOrigTriangle, lastSpeedAtOrigTriangle, speedAtTriangle, triangle.normal,origArea, 
-                lastOrigArea, triangleArea, Surface, dt, tauMax, center));
+            hydroSum += ComputeSlammingForces(speedAtOrigTriangle, lastSpeedAtOrigTriangle, speedAtTriangle, triangle.normal,origArea, 
+                lastOrigArea, triangleArea, Surface, dt, tauMax, center).force;
 
+            // wrong
             //_lastSpeedAtTriangle[triangle.surfaceTriIndex] = speedAtTriangle;
             //_lastArea[triangle.surfaceTriIndex] = area;
         }
@@ -674,7 +690,7 @@ class BoatForcesUnity : MonoBehaviour
         //(Vector3 dbis, Vector3 dtbis) = ComputeDampingBis(_submergedSurface, _surface, speed, _rigidbody.angularVelocity);
         ////_rigidbody.AddForce(dbis);
         ////_rigidbody.AddTorque(dtbis);
-
+        Debug.Log("slamming " + hydroSum);
         return forces;
     }
 
