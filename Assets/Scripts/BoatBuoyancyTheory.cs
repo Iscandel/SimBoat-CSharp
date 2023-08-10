@@ -64,7 +64,7 @@ public class BoatBuoyancyTheory : MonoBehaviour, IPhysicsListener, IForceListene
     IWaterProvider _waterProvider;
 
     Body _body;
-    BodyState _bodyState;
+    BodyStateCh _bodyState;
 
     public float _mass = 100;
     public Vector3 _cogOffset = new Vector3(0, 0, 0);
@@ -97,7 +97,7 @@ public class BoatBuoyancyTheory : MonoBehaviour, IPhysicsListener, IForceListene
         //
         ChronoPhysicsManager manager = ChronoPhysicsManager.Instance;
 
-        _bodyState = new BodyState();
+        _bodyState = new BodyStateCh();
 
 
         BodyParams bodyParams = new BodyParams();
@@ -230,7 +230,7 @@ public class BoatBuoyancyTheory : MonoBehaviour, IPhysicsListener, IForceListene
         }
     }
 
-    public void ComputeForce(Body body, ref List<Force> force, BodyState state)
+    public void ComputeForce(Body body, ref List<Force> force, BodyStateCh state)
     {
         Vector3 sumForces = new Vector3();
         Force forces = ComputeWeight();

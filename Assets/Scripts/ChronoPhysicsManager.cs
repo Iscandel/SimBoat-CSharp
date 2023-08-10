@@ -21,6 +21,12 @@ public enum RefFrame
 
 public struct ForceTorque
 {
+    //public ForceTorque()
+    //{
+    //    force = Vector3.zero;
+    //    torque = Vector3.zero;
+    //}
+
     public ForceTorque(Vector3 force, Vector3 torque)
     {
         this.force = force;
@@ -42,7 +48,7 @@ public struct Force
 
 public interface IForceListener
 {
-    public void ComputeForce(Body body, ref List<Force> force, BodyState state);
+    public void ComputeForce(Body body, ref List<Force> force, BodyStateCh state);
 }
 
 public struct ForceObject
@@ -53,7 +59,7 @@ public struct ForceObject
     public ChForce chTorque;
 }
 
-public struct BodyState
+public struct BodyStateCh
 {
     public Vector3 pos;
     public Quaternion rot;
@@ -82,7 +88,7 @@ public class Body
     }
     public BodyParams parameters;
     public ChBodyAuxRef chBody;
-    public BodyState state;
+    public BodyStateCh state;
     public List<ForceObject> forceObjects;
 }
 
@@ -358,7 +364,7 @@ public class ChronoPhysicsManager : MonoBehaviour
     void UpdateKinematics(ref Body body)
     {
         // /!\ /!\ BodyState is a struct, so enforce reference
-        ref BodyState state = ref body.state;
+        ref BodyStateCh state = ref body.state;
         ChFrameMovingD chronoFrame = body.chBody.GetFrame_REF_to_abs();
 
         // get body states
@@ -585,7 +591,7 @@ public class ChronoPhysicsManager : MonoBehaviour
         return res;
     }
 
-    public BodyState GetBodyState(Body body)
+    public BodyStateCh GetBodyState(Body body)
     {
         return body.state;
     }

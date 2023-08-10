@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Assets.Scripts.Physics
 {
-    public class MeshBasedWaterPhysics : MonoBehaviour
+    public class MeshBasedWaterPhysics : PhysicsBody
     {
         internal struct VertexAndDepth
         {
@@ -89,16 +89,17 @@ namespace Assets.Scripts.Physics
 
         IWaterProvider _waterProvider;
 
-        Body _body;
-        BodyState _bodyState;
+        protected ForceTorque[] _forces;
 
-        public float _mass = 100;
-        public Vector3 _cogOffset = new Vector3(0, 0, 0);
-        public Vector3 _diagInertia = new Vector3(50, 50, 50);
+        //public float _mass = 100;
+        //public Vector3 _cogOffset = new Vector3(0, 0, 0);
+        //public Vector3 _diagInertia = new Vector3(50, 50, 50);
 
         public RefFrame _refFrame = RefFrame.WORLD;
 
-        protected Rigidbody _rigidbody;
+        public Vector3 _worldCenterOfMass;
+
+        //protected Rigidbody _rigidbody;
 
 
         public bool _isDebug = true;
@@ -133,9 +134,9 @@ namespace Assets.Scripts.Physics
         public float SubmergedArea { get => _submergedArea; set => _submergedArea = value; }
 
         // Start is called before the first frame update
-        void Start()
-        {
-            //Unity.Jobs.IJobParallelFor f;
+        protected override void Start_impl()
+        { 
+        //Unity.Jobs.IJobParallelFor f;
 
             _mesh = GetComponent<MeshFilter>().sharedMesh;
             _trianglesAndVertices = new DepthTriangle[_mesh.triangles.Length / 3];
@@ -168,7 +169,8 @@ namespace Assets.Scripts.Physics
                 _origArea[i] = 0;
             }
 
-
+            _forces = new ForceTorque[_trianglesAndVertices.Length];
+                
             GameObject[] oceanGO = GameObject.FindGameObjectsWithTag("Ocean");
             _waterProvider = oceanGO[0].GetComponent<IWaterProvider>();
             
@@ -177,22 +179,22 @@ namespace Assets.Scripts.Physics
 
 
             //
-            _rigidbody = GetComponent<Rigidbody>();
-            _rigidbody.useGravity = false;
-            _rigidbody.detectCollisions = false;
-            _rigidbody.inertiaTensor = _diagInertia;
-            _rigidbody.mass = _mass;
-            _rigidbody.centerOfMass = _cogOffset;
+            //_rigidbody = GetComponent<Rigidbody>();
+            //_rigidbody.useGravity = false;
+            //_rigidbody.detectCollisions = false;
+            //_rigidbody.inertiaTensor = _diagInertia;
+            //_rigidbody.mass = _mass;
+            //_rigidbody.centerOfMass = _cogOffset;
         }
 
-        void FixedUpdate()
+        protected override void ComputePhysics() 
         {
-            List<Force> allForces = new List<Force>();
             Vector3 sumForces = new Vector3();
 
             Force fweight = ComputeWeight();
-            allForces.Add(fweight);
 
+            _rigidbody.AddForceAtPosition(fweight.force, fweight.appliPoint);
+      
             bool status = true;
             //List<Force> forcesB = 
             ComputeWaterPhysics(ref status);
@@ -239,6 +241,12 @@ namespace Assets.Scripts.Physics
 
        void ComputeWaterPhysics(ref bool status)
         {
+            for (int i = 0; i < _forces.Length; i++)
+            {
+                _forces[i].force = Vector3.zero;
+                _forces[i].torque = Vector3.zero;
+            }
+
             Vector3[] vertices = _mesh.vertices;
 
             _submergedTriangles.Clear();
@@ -263,6 +271,7 @@ namespace Assets.Scripts.Physics
                 return;// new List<Force>();
             }
 
+            _worldCenterOfMass = _rigidbody.worldCenterOfMass;
             int nbThreads = 8;
             Thread[] threads = new Thread[nbThreads];
             int step = _trianglesAndVertices.Length / nbThreads;
@@ -274,10 +283,25 @@ namespace Assets.Scripts.Physics
 
                 threads[i].Start(ind);
             }
+
+            for (int i = 0; i < nbThreads; ++i)
+            {
+                threads[i].Join();
+            }
+
+            for(int i =  0; i < _trianglesAndVertices.Length; i++)
+            {
+                _rigidbody.AddForce(_forces[i].force);
+                _rigidbody.AddTorque(_forces[i].torque);
+
+
+            }
+
         }
 
         void WaterPhysicsFunc(object threadIndices)//int minIndex, int maxIndex)
         {
+            List<DepthTriangle> submergedTriangles  = new List<DepthTriangle>();
             int[] unfoldedIndices = (int[]) threadIndices;
             for (int i = unfoldedIndices[0]; i < unfoldedIndices[1]; i++)
             {
@@ -288,8 +312,8 @@ namespace Assets.Scripts.Physics
                 //int[] indices = { _mesh.triangles[i * 3], _mesh.triangles[(i * 3) + 1], _mesh.triangles[(i * 3) + 2] };
 
                 Vector3 center = GeometryTools.ComputeCentroid(worldVertex0, worldVertex1, worldVertex2);
-                Vector3 r = center - _rigidbody.worldCenterOfMass;
-                Vector3 speedAtTriangle = _rigidbody.velocity + Vector3.Cross(_rigidbody.angularVelocity, r);
+                Vector3 r = center - _worldCenterOfMass;
+                Vector3 speedAtTriangle = _state.velocity + Vector3.Cross(_state.angularVelocity, r);
                 _lastSpeedAtOrigTriangle[i] = _speedAtOrigTriangle[i];
                 _speedAtOrigTriangle[i] = speedAtTriangle;
                 _lastOrigArea[i] = _origArea[i];
@@ -363,11 +387,14 @@ namespace Assets.Scripts.Physics
                             waterTriangle2 = new DepthTriangle(im, il, M.vertex, heightIm, heightIl, M.h, -tmpNormal2, i);
                         }
 
-                        _submergedTriangles.Add(waterTriangle1);
-                        _submergedTriangles.Add(waterTriangle2);
+                        submergedTriangles.Add(waterTriangle1);
+                        submergedTriangles.Add(waterTriangle2);
 
                         _origArea[i] = GeometryTools.ComputeTriangleArea(waterTriangle1.p0, waterTriangle1.p1, waterTriangle1.p2) +
                                        GeometryTools.ComputeTriangleArea(waterTriangle2.p0, waterTriangle2.p1, waterTriangle2.p2);
+
+                        ComputeForce(i, waterTriangle1);
+                        ComputeForce(i, waterTriangle2);
 
                     } //1 underwater
                     else if (M.h > 0 && L.h < 0)
@@ -396,76 +423,74 @@ namespace Assets.Scripts.Physics
                         }
 
                         if (CompareNormals(tmpNormal, geometricNormal))
-                            _submergedTriangles.Add(new DepthTriangle(jh, jm, L.vertex, heightJh, heightJm, L.h, tmpNormal, i));
+                            submergedTriangles.Add(new DepthTriangle(jh, jm, L.vertex, heightJh, heightJm, L.h, tmpNormal, i));
                         else
-                            _submergedTriangles.Add(new DepthTriangle(jh, L.vertex, jm, heightJh, L.h, heightJm, -tmpNormal, i));
+                            submergedTriangles.Add(new DepthTriangle(jh, L.vertex, jm, heightJh, L.h, heightJm, -tmpNormal, i));
 
-                        _origArea[i] = GeometryTools.ComputeTriangleArea(_submergedTriangles.Last().p0, _submergedTriangles.Last().p1, _submergedTriangles.Last().p2);
+                        ComputeForce(i, submergedTriangles.Last());
+
+                        _origArea[i] = GeometryTools.ComputeTriangleArea(submergedTriangles.Last().p0, submergedTriangles.Last().p1, submergedTriangles.Last().p2);
                     }
                 }
                 else if (H.h < 0 && M.h < 0 && L.h < 0)
                 {
-                    _submergedTriangles.Add(new DepthTriangle(worldVertex0, worldVertex1, worldVertex2, height0, height1, height2, geometricNormal, i));
+                    submergedTriangles.Add(new DepthTriangle(worldVertex0, worldVertex1, worldVertex2, height0, height1, height2, geometricNormal, i));
 
-                    _origArea[i] = GeometryTools.ComputeTriangleArea(_submergedTriangles.Last().p0, _submergedTriangles.Last().p1, _submergedTriangles.Last().p2);
+                    ComputeForce(i, submergedTriangles.Last());
+
+                    _origArea[i] = GeometryTools.ComputeTriangleArea(submergedTriangles.Last().p0, submergedTriangles.Last().p1, submergedTriangles.Last().p2);
                 }
             }
-
-            List<Force> forces = new List<Force>();
 
             _submergedArea = 0;
-            foreach (DepthTriangle triangle in _submergedTriangles)
+            
+            //foreach (Force force in forces)
+            //    _rigidbody.AddForceAtPosition(force.force, force.appliPoint);
+        }
+
+        void ComputeForce(int index, DepthTriangle triangle)
+        {
+            (VertexAndDepth H, VertexAndDepth M, VertexAndDepth L) = triangle.GetSortedByVertex();
+            Debug.Assert(H.vertex.y >= M.vertex.y && H.vertex.y >= L.vertex.y && M.vertex.y >= L.vertex.y);
+
+            //float RHO = UnityPhysicsConstants.RHO;
+            //float absG = -UnityPhysicsConstants.G.y;
+            float area = GeometryTools.ComputeTriangleArea(H.vertex, M.vertex, L.vertex);
+
+            _submergedArea += area;
+            Vector3 center = GeometryTools.ComputeCentroid(H.vertex, M.vertex, L.vertex);
+            //Debug.Log(center.y);
+            float depthCenter;
+            if (!_approximateMode)
             {
-                (VertexAndDepth H, VertexAndDepth M, VertexAndDepth L) = triangle.GetSortedByVertex();
-                Debug.Assert(H.vertex.y >= M.vertex.y && H.vertex.y >= L.vertex.y && M.vertex.y >= L.vertex.y);
-
-                //float RHO = UnityPhysicsConstants.RHO;
-                //float absG = -UnityPhysicsConstants.G.y;
-                float area = GeometryTools.ComputeTriangleArea(H.vertex, M.vertex, L.vertex);
-
-                _submergedArea += area;
-                Vector3 center = GeometryTools.ComputeCentroid(H.vertex, M.vertex, L.vertex);
-                //Debug.Log(center.y);
-                float depthCenter;
-                if (!_approximateMode)
+                float[] heightCenter = new float[1];
+                _waterProvider.SampleHeightAt(new Vector3[] { center }, ref heightCenter);
+                depthCenter = heightCenter[0] - center.y;
+                if (depthCenter < 0)
                 {
-                    float[] heightCenter = new float[1];
-                    _waterProvider.SampleHeightAt(new Vector3[] { center }, ref heightCenter);
-                    depthCenter = heightCenter[0] - center.y;
-                    if (depthCenter < 0)
-                    {
-                        Debug.Log("Depth center : " + depthCenter);
-                        continue;
-                    }
+                    Debug.Log("Depth center : " + depthCenter);
+                    return;
                 }
-                //else
-                //{
-                //    // Use barycentric coordinates to estimate the centroid depth
-                //    Vector3 e0 = H.vertex - center;
-                //    Vector3 e1 = M.vertex - center;
-                //    Vector3 e2 = L.vertex - center;
-
-                //    float u = 0.5f * Vector3.Cross(e1, e2).magnitude / area;
-                //    float v = 0.5f * Vector3.Cross(e2, e0).magnitude / area;
-                //    float w = 1f - u - v;
-
-                //    depthCenter = (float)(u * (-H.h) + v * (-M.h) + w * (-L.h));
-                //}
-
-                //Force force = ComputeBuoyancyAtCentroid(H.vertex, M.vertex, L.vertex, triangle.normal, center, depthCenter);      
-                //forces.Add(force);
-
-                Force force = ComputeBuoyancyAtCenterOfPressure(H.vertex, M.vertex, L.vertex, (float)H.h, (float)M.h, (float)L.h, triangle.normal);
-                forces.Add(force);
-
-                //Debug.DrawLine(force.appliPoint, force.appliPoint + triangle.normal.normalized * 3, Color.magenta);
             }
+            //else
+            //{
+            //    // Use barycentric coordinates to estimate the centroid depth
+            //    Vector3 e0 = H.vertex - center;
+            //    Vector3 e1 = M.vertex - center;
+            //    Vector3 e2 = L.vertex - center;
 
-            foreach (Force force in forces)
-                _rigidbody.AddForceAtPosition(force.force, force.appliPoint);
+            //    float u = 0.5f * Vector3.Cross(e1, e2).magnitude / area;
+            //    float v = 0.5f * Vector3.Cross(e2, e0).magnitude / area;
+            //    float w = 1f - u - v;
 
-            //return forces;
-            //return (force: force, torque: torque);
+            //    depthCenter = (float)(u * (-H.h) + v * (-M.h) + w * (-L.h));
+            //}
+
+            //Force force = ComputeBuoyancyAtCentroid(H.vertex, M.vertex, L.vertex, triangle.normal, center, depthCenter);      
+            //forces.Add(force);
+
+            ForceTorque force = ComputeBuoyancyAtCenterOfPressure(H.vertex, M.vertex, L.vertex, (float)H.h, (float)M.h, (float)L.h, triangle.normal);
+            _forces[index] += force;
         }
 
 
@@ -507,7 +532,7 @@ namespace Assets.Scripts.Physics
         /// <param name="hL"></param>
         /// <param name="normal"></param>
         /// <returns></returns>
-        Force ComputeBuoyancyAtCenterOfPressure(Vector3 H, Vector3 M, Vector3 L, float hH, float hM, float hL, Vector3 normal)
+        ForceTorque ComputeBuoyancyAtCenterOfPressure(Vector3 H, Vector3 M, Vector3 L, float hH, float hM, float hL, Vector3 normal)
         {
             float RHO = UnityPhysicsConstants.RHO;
             float g = -UnityPhysicsConstants.G.y;
@@ -600,9 +625,10 @@ namespace Assets.Scripts.Physics
                 }
             }
 
-            Force force;
+            ForceTorque force;
             force.force = normal * (fUp + fDown);
-            force.appliPoint = GeometryTools.ComputeBarycenter(fUp, cpUp, fDown, cpDown);
+            Vector3 appliPoint = GeometryTools.ComputeBarycenter(fUp, cpUp, fDown, cpDown);
+            force.torque =  Vector3.Cross(appliPoint - _worldCenterOfMass, force.force);
 
             return force;
         }
