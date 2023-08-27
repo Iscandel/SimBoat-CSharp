@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using System.Linq;
+using static System.Net.WebRequestMethods;
+using Unity.VisualScripting;
+using System.Threading.Tasks;
 
 namespace Assets.Scripts.Physics
 {
@@ -126,6 +129,7 @@ namespace Assets.Scripts.Physics
         public bool _computePressure = true;
         public bool _computeSlamming = true;
 
+        float _deltaTime;
 
         // REMOVE
         //Crest.SampleHeightHelper _samplerTest;
@@ -173,10 +177,11 @@ namespace Assets.Scripts.Physics
                 
             GameObject[] oceanGO = GameObject.FindGameObjectsWithTag("Ocean");
             _waterProvider = oceanGO[0].GetComponent<IWaterProvider>();
-            
+
             // TODO
             //_samplerTest = new Crest.SampleHeightHelper();
 
+            _deltaTime = Time.fixedDeltaTime;
 
             //
             //_rigidbody = GetComponent<Rigidbody>();
@@ -248,12 +253,13 @@ namespace Assets.Scripts.Physics
             }
 
             Vector3[] vertices = _mesh.vertices;
+            int[] tri = _mesh.triangles;
 
-            _submergedTriangles.Clear();
+            //_submergedTriangles.Clear();
 
             for (int i = 0; i < _trianglesAndVertices.Length; i++)
             {
-                int[] indices = { _mesh.triangles[i * 3], _mesh.triangles[(i * 3) + 1], _mesh.triangles[(i * 3) + 2] };
+                int[] indices = { tri[i * 3], tri[(i * 3) + 1], tri[(i * 3) + 2] };
                 Vector3 worldVertex0 = transform.TransformPoint(vertices[indices[0]]);
                 Vector3 worldVertex1 = transform.TransformPoint(vertices[indices[1]]);
                 Vector3 worldVertex2 = transform.TransformPoint(vertices[indices[2]]);
@@ -272,12 +278,20 @@ namespace Assets.Scripts.Physics
             }
 
             _worldCenterOfMass = _rigidbody.worldCenterOfMass;
+            _deltaTime = Time.fixedDeltaTime;
+
+            //int[] ind = { 0, _trianglesAndVertices.Length };
+            //WaterPhysicsFunc(ind);
+
+            // Try 1
             int nbThreads = 8;
             Thread[] threads = new Thread[nbThreads];
             int step = _trianglesAndVertices.Length / nbThreads;
             for (int i = 0; i < nbThreads; ++i)
             {
-                int[] ind = {i * step, (i + 1) * step};
+                int[] ind = { i * step, (i + 1) * step };
+                if (i == nbThreads - 1)
+                    ind[1] = _trianglesAndVertices.Length;
 
                 threads[i] = new Thread(new ParameterizedThreadStart(WaterPhysicsFunc));
 
@@ -289,14 +303,63 @@ namespace Assets.Scripts.Physics
                 threads[i].Join();
             }
 
-            for(int i =  0; i < _trianglesAndVertices.Length; i++)
+
+            //Try 2
+            //const int threadCount = 10;
+            //int step = _trianglesAndVertices.Length / threadCount;
+            //using (var countdownEvent = new CountdownEvent(threadCount))
+            //{
+            //    for (var i = 0; i < threadCount; i++)
+            //    {
+            //        int[] ind = { i * step, (i + 1) * step };
+            //        if (i == threadCount - 1)
+            //            ind[1] = _trianglesAndVertices.Length;
+
+            //        ThreadPool.QueueUserWorkItem(
+            //            x =>
+            //            {
+            //                WaterPhysicsFunc(x);
+            //                //Console.WriteLine(x);
+            //                countdownEvent.Signal();
+            //            }, ind);
+            //    }
+
+            //    countdownEvent.Wait();
+            //}
+
+            //Try 3
+            //const int threadCount = 16;
+            //int step = _trianglesAndVertices.Length / threadCount;
+            //var tasks = new List<Task>();
+            //for (int i = 0; i < threadCount; i++)
+            //{
+            //    int[] ind = { i * step, (i + 1) * step };
+            //    if (i == threadCount - 1)
+            //        ind[1] = _trianglesAndVertices.Length;
+
+            //    var task = Task.Run(() => WaterPhysicsFunc(ind));
+            //    tasks.Add(task);
+            //}
+
+            //Task.WaitAll(tasks.ToArray());
+
+
+            ForceTorque sumForces; sumForces.force = Vector3.zero; sumForces.torque = Vector3.zero;
+            for(int i =  0; i < _forces.Length; i++)
             {
-                _rigidbody.AddForce(_forces[i].force);
-                _rigidbody.AddTorque(_forces[i].torque);
-
-
+                sumForces += _forces[i];
             }
 
+            if (Math.Abs(Time.fixedTime - 0.34) < 0.01)
+                Debug.Log("Stop here");
+
+
+            _rigidbody.AddForce(sumForces.force);
+            _rigidbody.AddTorque(sumForces.torque);
+
+            //Debug.Log(this.name + " " + sumForces.force + " " + sumForces.torque);
+            Debug.Log("meth1" + " " + sumForces.force.ToString("F10") + " " + sumForces.torque.ToString("F10") + " " + Time.fixedTime);
+            //0.34  3.14
         }
 
         void WaterPhysicsFunc(object threadIndices)//int minIndex, int maxIndex)
@@ -393,8 +456,8 @@ namespace Assets.Scripts.Physics
                         _origArea[i] = GeometryTools.ComputeTriangleArea(waterTriangle1.p0, waterTriangle1.p1, waterTriangle1.p2) +
                                        GeometryTools.ComputeTriangleArea(waterTriangle2.p0, waterTriangle2.p1, waterTriangle2.p2);
 
-                        ComputeForce(i, waterTriangle1);
-                        ComputeForce(i, waterTriangle2);
+                        _forces[i] += ComputeForce(i, waterTriangle1);
+                        _forces[i] += ComputeForce(i, waterTriangle2);
 
                     } //1 underwater
                     else if (M.h > 0 && L.h < 0)
@@ -427,7 +490,7 @@ namespace Assets.Scripts.Physics
                         else
                             submergedTriangles.Add(new DepthTriangle(jh, L.vertex, jm, heightJh, L.h, heightJm, -tmpNormal, i));
 
-                        ComputeForce(i, submergedTriangles.Last());
+                        _forces[i] += ComputeForce(i, submergedTriangles.Last());
 
                         _origArea[i] = GeometryTools.ComputeTriangleArea(submergedTriangles.Last().p0, submergedTriangles.Last().p1, submergedTriangles.Last().p2);
                     }
@@ -436,7 +499,7 @@ namespace Assets.Scripts.Physics
                 {
                     submergedTriangles.Add(new DepthTriangle(worldVertex0, worldVertex1, worldVertex2, height0, height1, height2, geometricNormal, i));
 
-                    ComputeForce(i, submergedTriangles.Last());
+                    _forces[i] += ComputeForce(i, submergedTriangles.Last());
 
                     _origArea[i] = GeometryTools.ComputeTriangleArea(submergedTriangles.Last().p0, submergedTriangles.Last().p1, submergedTriangles.Last().p2);
                 }
@@ -448,7 +511,7 @@ namespace Assets.Scripts.Physics
             //    _rigidbody.AddForceAtPosition(force.force, force.appliPoint);
         }
 
-        void ComputeForce(int index, DepthTriangle triangle)
+        ForceTorque ComputeForce(int index, DepthTriangle triangle)
         {
             (VertexAndDepth H, VertexAndDepth M, VertexAndDepth L) = triangle.GetSortedByVertex();
             Debug.Assert(H.vertex.y >= M.vertex.y && H.vertex.y >= L.vertex.y && M.vertex.y >= L.vertex.y);
@@ -469,7 +532,7 @@ namespace Assets.Scripts.Physics
                 if (depthCenter < 0)
                 {
                     Debug.Log("Depth center : " + depthCenter);
-                    return;
+                    return new ForceTorque(new Vector3(), new Vector3());
                 }
             }
             //else
@@ -490,8 +553,179 @@ namespace Assets.Scripts.Physics
             //forces.Add(force);
 
             ForceTorque force = ComputeBuoyancyAtCenterOfPressure(H.vertex, M.vertex, L.vertex, (float)H.h, (float)M.h, (float)L.h, triangle.normal);
-            _forces[index] += force;
+
+            Vector3 r = center - _worldCenterOfMass;
+            Vector3 speedAtTriangle = _state.velocity + Vector3.Cross(_state.angularVelocity, r);
+            if (_computeViscous)
+                force += ComputeViscousDrag(speedAtTriangle, area, triangle.normal, center);
+            if (_computePressure)
+                force += ComputePressureDrag(speedAtTriangle, area, triangle.normal, center);
+            if(_computeSlamming)
+            {
+                Vector3 speedAtOrigTriangle = _speedAtOrigTriangle[triangle.surfaceTriIndex];
+                Vector3 lastSpeedAtOrigTriangle = _lastSpeedAtOrigTriangle[triangle.surfaceTriIndex];
+                float origArea = _origArea[triangle.surfaceTriIndex];
+                float lastOrigArea = _lastOrigArea[triangle.surfaceTriIndex];
+
+                float dt = _deltaTime;
+                float tauMax = 2;
+                float triangleArea = GeometryTools.ComputeTriangleArea(_trianglesAndVertices[triangle.surfaceTriIndex].p0,
+                                                                   _trianglesAndVertices[triangle.surfaceTriIndex].p1,
+                                                                   _trianglesAndVertices[triangle.surfaceTriIndex].p2);
+
+                float debugRatio = 0;
+                force += ComputeSlammingForces(speedAtOrigTriangle, lastSpeedAtOrigTriangle, speedAtTriangle, triangle.normal, origArea,
+                        lastOrigArea, triangleArea, MeshArea, dt, tauMax, center, ref debugRatio);
+                    debugRatio = 0;
+                    
+                    triangle.Slamming = debugRatio;
+                    //_submergedTriangles[index] = triangle;
+            }
+
+            return force;
         }
+
+        ForceTorque ComputeViscousDrag(Vector3 speedAtTriangle, float area, Vector3 normal, Vector3 center)
+        {
+            ForceTorque force;
+
+            //float viscousDragCoeff = 1.0f;
+            //float cosTheta = Vector3.Dot(speedAtTriangle.normalized, normal);
+            //force.force = -(1 - Mathf.Abs(cosTheta)) * viscousDragCoeff * speedAtTriangle * area;
+
+            //force.appliPoint = center;
+            //return force;
+
+            float RHO = UnityPhysicsConstants.RHO;
+
+            double viscosity = 1.0533E-6f;
+            double L = 2.5 * 2 + 1 * 2; //TODO
+            double speedMagnitude = speedAtTriangle.magnitude;
+            double Rn = speedMagnitude * L / viscosity;
+            double Cf = 0.075 / Math.Pow(Math.Log10(Rn) - 2, 2);
+            
+            Vector3 vti = speedAtTriangle - normal * Vector3.Dot(speedAtTriangle.normalized, normal);
+            Vector3 ufi = -vti.normalized;
+            Vector3 vfi = (float)speedMagnitude * ufi;
+            Vector3 drag = 0.5f * RHO * (float)Cf * area * vfi.magnitude * vfi;
+            force.force = drag;
+            //force.appliPoint = center;
+            force.torque = Vector3.Cross(center - _worldCenterOfMass, force.force);
+
+            return force;
+        }
+
+        ForceTorque ComputePressureDrag(Vector3 speedAtTriangle, float area, Vector3 normal, Vector3 center)
+        {
+            ForceTorque force;
+            //Vector3 Fd = new Vector3(0, 0, 0);
+            //float cosTheta = Vector3.Dot(speedAtTriangle.normalized, normal);
+            //float vi = speedAtTriangle.magnitude;
+            //float Cd = 0.5f * UnityPhysicsConstants.RHO;
+            //float vr = 1;
+            //Fd = -Cd * vi / vr * cosTheta * area * normal;
+            //force.force = Fd;
+            //force.appliPoint = center;
+
+            Vector3 Fd = new Vector3(0, 0, 0);
+            float vi = speedAtTriangle.magnitude;
+            float cosTheta = Vector3.Dot(speedAtTriangle.normalized, normal);
+            
+            if (cosTheta >= 0)
+            {
+                Fd = -(_Cpd1 * vi / _vr + _Cpd2 * (float)Math.Pow(vi / _vr, 2)) * area * (float)Math.Pow(cosTheta, _fp) * normal;
+            }
+            else
+            {
+                Fd = (_Csd1 * vi / _vr + _Csd2 * (float)Math.Pow(vi / _vr, 2)) * area * (float)Math.Pow(-cosTheta, _fs) * normal;
+            }
+
+            force.force = Fd;
+            //force.appliPoint = center;
+            force.torque = Vector3.Cross(center - _worldCenterOfMass, force.force);
+
+            return force;
+        }
+
+        ForceTorque ComputeSlammingForces(Vector3 origVelocity, Vector3 lastOrigVelocity, Vector3 submergedVelocity,
+            Vector3 normal, float areaOrig, float lastAreaOrig, float triangleArea, float totalArea, float dt, float tauMax, Vector3 center, ref float debugRatio)
+        {
+            float cosTheta = Vector3.Dot(origVelocity.normalized, normal);
+            if (cosTheta < 0)
+                return new ForceTorque();
+
+            Vector3 tauVec = (areaOrig * origVelocity - lastAreaOrig * lastOrigVelocity) / (triangleArea * dt);
+            float tau = tauVec.magnitude;
+
+            Vector3 FStopping = _mass * submergedVelocity * 2 * triangleArea / totalArea;
+            //int pSlamming = 2;
+            ForceTorque force;
+            force.force = -Mathf.Pow(Mathf.Clamp01(tau / tauMax), _pSlamming) * cosTheta * FStopping;
+            //force.appliPoint = center;
+            force.torque = Vector3.Cross(center - _worldCenterOfMass, force.force);
+
+            debugRatio = force.force.magnitude / FStopping.magnitude;
+
+            return force;
+        }
+
+        //ForceTorque ComputeHydrodynamics()
+        //{
+        //    List<Force> forces = new List<Force>();
+        //    Vector3 hydroSum = new Vector3();
+        //    Vector3 torque = Vector3.zero;
+        //    //foreach (DepthTriangle triangle in _submergedTriangles)
+        //    for (int i = 0; i < _submergedTriangles.Count; i++)
+        //    {
+        //        DepthTriangle triangle = _submergedTriangles[i];
+
+        //        float area = GeometryTools.ComputeTriangleArea(triangle.p0, triangle.p1, triangle.p2);
+        //        Vector3 center = GeometryTools.ComputeCentroid(triangle.p0, triangle.p1, triangle.p2);
+        //        Vector3 r = center - _rigidbody.worldCenterOfMass;
+        //        Vector3 speedAtTriangle = _rigidbody.velocity + Vector3.Cross(_rigidbody.angularVelocity, r);
+        //        if (_computeViscous)
+        //            forces.Add(ComputeViscousDrag(speedAtTriangle, area, triangle.normal, center));
+        //        if (_computePressure)
+        //        {
+        //            forces.Add(ComputePressureDrag(speedAtTriangle, area, triangle.normal, center));
+        //            (VertexAndDepth H, VertexAndDepth M, VertexAndDepth L) = triangle.GetSortedByVertex();
+        //            //forces.Add(ComputePressureDragAtCenterOfPressure(H.vertex, M.vertex, L.vertex, (float)H.h, (float)M.h, (float)L.h, triangle.normal));
+        //            if (Math.Abs(triangle.normal.z) > Math.Abs(triangle.normal.y) && Math.Abs(triangle.normal.z) > Math.Abs(triangle.normal.x))
+        //                torque += Vector3.Cross(forces.Last().appliPoint - _rigidbody.worldCenterOfMass, forces.Last().force);
+        //        }
+        //        //hydroSum += forces.Last<Force>().force;
+
+
+        //        Vector3 speedAtOrigTriangle = _speedAtOrigTriangle[triangle.surfaceTriIndex];
+        //        Vector3 lastSpeedAtOrigTriangle = _lastSpeedAtOrigTriangle[triangle.surfaceTriIndex];
+        //        float origArea = _origArea[triangle.surfaceTriIndex];
+        //        float lastOrigArea = _lastOrigArea[triangle.surfaceTriIndex];
+
+        //        float dt = Time.fixedDeltaTime;
+        //        float tauMax = 2;
+        //        float triangleArea = GeometryTools.ComputeTriangleArea(_trianglesAndVertices[triangle.surfaceTriIndex].p0,
+        //                                                           _trianglesAndVertices[triangle.surfaceTriIndex].p1,
+        //                                                           _trianglesAndVertices[triangle.surfaceTriIndex].p2);
+
+        //        float debugRatio = 0;
+        //        if (_computeSlamming)
+        //        {
+        //            forces.Add(ComputeSlammingForces(speedAtOrigTriangle, lastSpeedAtOrigTriangle, speedAtTriangle, triangle.normal, origArea,
+        //                lastOrigArea, triangleArea, Surface, dt, tauMax, center, ref debugRatio));
+        //            //if(Math.Abs(triangle.normal.z) > Math.Abs(triangle.normal.y) && Math.Abs(triangle.normal.z) > Math.Abs(triangle.normal.x))
+        //            //    torque += Vector3.Cross(forces.Last().appliPoint - _rigidbody.worldCenterOfMass, forces.Last().force);
+        //            debugRatio = 0;
+        //            hydroSum += ComputeSlammingForces(speedAtOrigTriangle, lastSpeedAtOrigTriangle, speedAtTriangle, triangle.normal, origArea,
+        //               lastOrigArea, triangleArea, Surface, dt, tauMax, center, ref debugRatio).force;
+        //            triangle.Slamming = debugRatio;
+        //            _submergedTriangles[i] = triangle;
+        //        }
+
+        //        // wrong
+        //        //_lastSpeedAtTriangle[triangle.surfaceTriIndex] = speedAtTriangle;
+        //        //_lastArea[triangle.surfaceTriIndex] = area;
+        //    }
+        //}
 
 
         /// <summary>
