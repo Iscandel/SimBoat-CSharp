@@ -12,14 +12,23 @@ public class SimpleEngine : MonoBehaviour
     public float _maxRudderAngle;
     public Vector3 _thrustAppliPoint;
     public Vector3 _localThrustDirection;
-
+    public float _heightOffset;
     public bool generateTorque;
+
+    public bool _simplifiedHeightDetection;
+
+    private IWaterProvider _waterProvider;
 
 
     // Start is called before the first frame update
     void Start()
     {
         _rigidbody = GetComponent<Rigidbody>();
+        _simplifiedHeightDetection = true;
+        //_heightOffset = 0;
+
+        GameObject[] oceanGO = GameObject.FindGameObjectsWithTag("Ocean");
+        _waterProvider = oceanGO[0].GetComponent<IWaterProvider>();
     }
 
     // Update is called once per frame
@@ -59,6 +68,26 @@ public class SimpleEngine : MonoBehaviour
 
         //float RHO = worldThrustPosition.y < _waterHeightPropellerPos ? UnityPhysicsConstants.RHO : UnityPhysicsConstants.RHO_AIR;
         float thrust = _propellerRPM;
+        float waterHeight;
+        if (_simplifiedHeightDetection) 
+        {
+            waterHeight = 0f;
+        }
+        else 
+        {
+            float[] heights = new float[1];
+            Vector3[] samples = new Vector3[1];
+            samples[0] = _thrustAppliPoint;
+            if(_waterProvider.SampleHeightAt(samples, ref heights))
+                waterHeight = heights[0];
+            else
+                waterHeight = 0;
+
+        }
+
+        if (transform.TransformPoint(_thrustAppliPoint).y + _heightOffset > waterHeight)
+            thrust = 0;
+
         Vector3 thrustForce = worldThrustDirection * thrust;
 
         Force force;
@@ -71,6 +100,7 @@ public class SimpleEngine : MonoBehaviour
     private void FixedUpdate()
     {
         Force force = ComputeThrustForce();
+        Debug.Log(force.force);
         _rigidbody.AddForceAtPosition(force.force, force.appliPoint);
     }
 }
