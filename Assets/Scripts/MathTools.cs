@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using UnityEngine;
 
-class MathTools
+public static class MathTools
 {
     public const float RPM_TO_RPS = 1.0f / 60;
     public static Vector3 UnityToNED(float x, float y, float z)
@@ -211,5 +211,10 @@ class MathTools
     public static float Interp1(float start, float end, float t)
     {
         return (1 - t) * start + t * end;
+    }
+
+    public static bool AlmostEqual(this Vector3 a, Vector3 b, float threshold = 0.005f)
+    {
+        return Vector3.SqrMagnitude(a - b) < threshold;
     }
 }

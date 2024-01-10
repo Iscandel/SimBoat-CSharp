@@ -2,54 +2,54 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface IPhysicsListener
-{
-    public enum EventType
-    {
-        START,
-        END
-    };
+//public interface IPhysicsListener
+//{
+//    public enum EventType
+//    {
+//        START,
+//        END
+//    };
 
-    public void OnPhysicsEvent(EventType eventType);
-}
+//    public void OnPhysicsEvent(EventType eventType);
+//}
 
-public enum RefFrame
-{
-    WORLD,
-    BODY_FRAME
-}
+//public enum RefFrame
+//{
+//    WORLD,
+//    BODY_FRAME
+//}
 
-public struct ForceTorque
-{
-    //public ForceTorque()
-    //{
-    //    force = Vector3.zero;
-    //    torque = Vector3.zero;
-    //}
+//public struct ForceTorque
+//{
+//    //public ForceTorque()
+//    //{
+//    //    force = Vector3.zero;
+//    //    torque = Vector3.zero;
+//    //}
 
-    public ForceTorque(Vector3 force, Vector3 torque)
-    {
-        this.force = force;
-        this.torque = torque;
-    }
+//    public ForceTorque(Vector3 force, Vector3 torque)
+//    {
+//        this.force = force;
+//        this.torque = torque;
+//    }
 
-    public Vector3 force;
-    public Vector3 torque;
+//    public Vector3 force;
+//    public Vector3 torque;
 
-    public static ForceTorque operator +(ForceTorque a, ForceTorque b) => new ForceTorque(a.force + b.force, a.torque + b.torque);
-}
+//    public static ForceTorque operator +(ForceTorque a, ForceTorque b) => new ForceTorque(a.force + b.force, a.torque + b.torque);
+//}
 
-public struct Force
-{
-    public Vector3 force;
-    public Vector3 appliPoint;
-}
+//public struct Force
+//{
+//    public Vector3 force;
+//    public Vector3 appliPoint;
+//}
 
 
-public interface IForceListener
-{
-    public void ComputeForce(Body body, ref List<Force> force, BodyStateCh state);
-}
+//public interface IForceListener
+//{
+//    public void ComputeForce(Body body, ref List<Force> force, BodyStateCh state);
+//}
 
 public struct ForceObject
 {
@@ -74,32 +74,27 @@ public struct BodyStateCh
     public Vector3 angularAcc_body;
 }
 
-public struct BodyParams
+
+public class ChronoBody : IBody
 {
-    public double mass;
-    public Vector3 diagInertia;
-    public Vector3 cogOffset;
-}
-public class Body
-{
-    public Body()
+    public ChronoBody()
     {
         forceObjects = new List<ForceObject>();
     }
     public BodyParams parameters;
     public ChBodyAuxRef chBody;
-    public BodyStateCh state;
+    public BodyState state;
     public List<ForceObject> forceObjects;
 }
 
-public class ChronoPhysicsManager : MonoBehaviour
+public class ChronoPhysicsManager : IPhysicsManager
 {
     private ChSystemSMC _chSystem;
 
     protected double _oldTime;
     protected double _dt;
 
-    protected List<Body> _bodies;
+    protected List<ChronoBody> _bodies;
 
     protected List<IPhysicsListener> _physicsListeners;
 
@@ -132,7 +127,7 @@ public class ChronoPhysicsManager : MonoBehaviour
         //_chSystem.SetTimestepperType(ChTimestepper.Type.EULER_IMPLICIT);
         _chSystem.SetTimestepperType(ChTimestepper.Type.RUNGEKUTTA45);
 
-        _bodies = new List<Body>();
+        _bodies = new List<ChronoBody>();
         _physicsListeners = new List<IPhysicsListener>();
         _oldTime = 0;
         _dt = 0;
@@ -220,19 +215,22 @@ public class ChronoPhysicsManager : MonoBehaviour
 
     public void UpdateForces(double currentTime)
     {
-        foreach (Body body in _bodies)
+        foreach (ChronoBody body in _bodies)
         {
             body.chBody.Empty_forces_accumulators();
             foreach (ForceObject forceObject in body.forceObjects)
             {
                 IForceListener listener = forceObject.listener;
-                List<Force> force = new List<Force>();
+                //List<Force> force = new List<Force>();
+                ForceTorque force = new ForceTorque();
                 listener.ComputeForce(body, ref force, body.state);
-                foreach (Force f in force)
+                //foreach (Force f in force)
                 {
-                    if (forceObject.frame == RefFrame.WORLD)
+                    if (forceObject.frame == RefFrame.WORLD_UNITY || forceObject.frame == RefFrame.WORLD_NED)
                     {
-                        body.chBody.Accumulate_force(ChronoTools.Vector3ToChVectorD(f.force), ChronoTools.Vector3ToChVectorD(f.appliPoint), false);
+                        //body.chBody.Accumulate_force(ChronoTools.Vector3ToChVectorD(force.force), ChronoTools.Vector3ToChVectorD(force.appliPoint), false);
+                        
+                        
                         //forceObject.chForce.SetDir(new ChVectorD(0, -1, 0));
                         //forceObject.chForce.SetMforce(5);
                         //ChVectorD v = body.chBody.GetAppliedForce();
@@ -244,7 +242,10 @@ public class ChronoPhysicsManager : MonoBehaviour
                     }
                     else
                     {
-                        body.chBody.Accumulate_force(ChronoTools.Vector3ToChVectorD(f.force), ChronoTools.Vector3ToChVectorD(f.appliPoint), true);
+                        //forceObject.chForce.SetVrelpoint()
+                        forceObject.chForce.SetRelDir(ChronoTools.Vector3ToChVectorD(force.force.normalized));
+                        forceObject.chForce.SetMforce(force.force.magnitude);
+                        //body.chBody.Accumulate_force(ChronoTools.Vector3ToChVectorD(force.force), ChronoTools.Vector3ToChVectorD(force.appliPoint), true);
 
                     }
                 }
@@ -258,7 +259,7 @@ public class ChronoPhysicsManager : MonoBehaviour
 
         for(int i = 0; i < _bodies.Count; i++)
         {
-            Body body = _bodies[i];
+            ChronoBody body = _bodies[i];
             UpdateKinematics(ref body);
         }
         _oldTime = currentTime;
@@ -335,25 +336,26 @@ public class ChronoPhysicsManager : MonoBehaviour
         }
     }
 
-    public void AddPhysicsEventListener(IPhysicsListener listener)
+    public override void AddPhysicsEventListener(IPhysicsListener listener)
     {
         _physicsListeners.Add(listener);
     }
 
-    public bool RemovePhysicsEventListener(IPhysicsListener listener)
+    public override bool RemovePhysicsEventListener(IPhysicsListener listener)
     {
         return _physicsListeners.Remove(listener);
     }
 
-    public bool SetCurrentBodyState(Body body, Vector3 pos, Quaternion unityQuat)
+    public bool SetCurrentBodyState(IBody body, Vector3 pos, Quaternion unityQuat)
     {
+        ChronoBody thisbody = body as ChronoBody;
         // TODO handle body speeds
 
         ChVectorD chPos = new ChVectorD(pos.x, pos.y, pos.z);
         //Quaternion unityQuat = Quaternion.Euler(euler);
         ChQuaternionD quat = new ChQuaternionD(unityQuat.w, unityQuat.x, unityQuat.y, unityQuat.z);
 
-        body.chBody.SetFrame_REF_to_abs(new ChFrameD(chPos, quat));
+        thisbody.chBody.SetFrame_REF_to_abs(new ChFrameD(chPos, quat));
 
         this.gameObject.transform.position = pos;
         this.gameObject.transform.eulerAngles = unityQuat.eulerAngles;
@@ -361,31 +363,32 @@ public class ChronoPhysicsManager : MonoBehaviour
         return true;
     }
 
-    void UpdateKinematics(ref Body body)
+    void UpdateKinematics(ref ChronoBody body)
     {
         // /!\ /!\ BodyState is a struct, so enforce reference
-        ref BodyStateCh state = ref body.state;
+        //ref BodyStateCh state = ref body.state;
+        BodyState state = body.state;
         ChFrameMovingD chronoFrame = body.chBody.GetFrame_REF_to_abs();
 
         // get body states
-        state.pos = ChronoTools.ChVectorDToVector3(chronoFrame.GetPos());
-        state.rot = ChronoTools.ChQuatToQuat(chronoFrame.GetRot());
-        state.speed = ChronoTools.ChVectorDToVector3(chronoFrame.GetPos_dt());
-        state.acc = ChronoTools.ChVectorDToVector3(chronoFrame.GetPos_dtdt());
-        state.angularSpeed = ChronoTools.ChVectorDToVector3(chronoFrame.GetWvel_par());
-        state.angularAcc = ChronoTools.ChVectorDToVector3(chronoFrame.GetWacc_par());
+        state.position = ChronoTools.ChVectorDToVector3(chronoFrame.GetPos());
+        state.rotation = ChronoTools.ChQuatToQuat(chronoFrame.GetRot());
+        state.velocity = ChronoTools.ChVectorDToVector3(chronoFrame.GetPos_dt());
+        state.acceleration = ChronoTools.ChVectorDToVector3(chronoFrame.GetPos_dtdt());
+        state.angularVelocity = ChronoTools.ChVectorDToVector3(chronoFrame.GetWvel_par());
+        state.angularAcceleration = ChronoTools.ChVectorDToVector3(chronoFrame.GetWacc_par());
 
-        ChVectorD negSpeed_body_old = ChronoTools.Vector3ToChVectorD(-state.speed_body);
+        ChVectorD negSpeed_body_old = ChronoTools.Vector3ToChVectorD(-state.velocity_body);
         ChVectorD speed_body = chronoFrame.TransformDirectionParentToLocal(chronoFrame.GetPos_dt());
         ChVectorD acceleration_body = new ChVectorD(
                                             (speed_body.x + negSpeed_body_old.x) / _dt,
                                             (speed_body.y + negSpeed_body_old.y) / _dt,
                                             (speed_body.z + negSpeed_body_old.z) / _dt);
 
-        state.speed_body = ChronoTools.ChVectorDToVector3(speed_body);
-        state.acc_body = ChronoTools.ChVectorDToVector3(acceleration_body);
-        state.angularSpeed_body = ChronoTools.ChVectorDToVector3(chronoFrame.GetWvel_loc());
-        state.angularAcc_body = ChronoTools.ChVectorDToVector3(chronoFrame.GetWacc_loc());
+        state.velocity_body = ChronoTools.ChVectorDToVector3(speed_body);
+        state.acceleration_body = ChronoTools.ChVectorDToVector3(acceleration_body);
+        state.angularVelocity_body = ChronoTools.ChVectorDToVector3(chronoFrame.GetWvel_loc());
+        state.angularAcceleration_body = ChronoTools.ChVectorDToVector3(chronoFrame.GetWacc_loc());
 
         //float roll = 0;
         //float pitch = 0;
@@ -441,16 +444,16 @@ public class ChronoPhysicsManager : MonoBehaviour
         yaw = (yaw > 180.0f) ? (yaw - 360.0f) : ((yaw < -180.0f) ? (yaw + 360.0f) : yaw);
     }
 
-    public Body CreateBody(BodyParams parameters, Vector3 pos, Quaternion rot)
+    public IBody CreateBody(BodyParams parameters, Vector3 pos, Quaternion rot)
     {
-        Body body = new Body();
+        ChronoBody body = new ChronoBody();
         body.parameters = parameters;
         
 
         ChBodyAuxRef chBody = new ChBodyAuxRef();
         chBody.SetMass(parameters.mass);
         chBody.SetInertiaXX(ChronoTools.Vector3ToChVectorD(parameters.diagInertia));
-        chBody.SetFrame_COG_to_REF(new ChFrameD(ChronoTools.Vector3ToChVectorD(parameters.cogOffset)));
+        chBody.SetFrame_COG_to_REF(new ChFrameD(ChronoTools.Vector3ToChVectorD(-parameters.originFromCoG)));
         chBody.SetCollide(false);
 
         ChVectorD chPos = ChronoTools.Vector3ToChVectorD(pos);
@@ -465,17 +468,18 @@ public class ChronoPhysicsManager : MonoBehaviour
         return body;
     }
 
-    public void addForceListener(IForceListener listener, Body body, RefFrame frame)
+    public void addForceListener(IForceListener listener, IBody body, RefFrame frame)
     {
+        ChronoBody thisbody = body as ChronoBody;
         ForceObject obj = new ForceObject();
         obj.listener = listener;
         obj.frame = frame;
-        initForce(body, ref obj);
+        initForce(thisbody, ref obj);
         //obj.chForce = chForce;
-        body.forceObjects.Add(obj);
+        thisbody.forceObjects.Add(obj);
     }
 
-    public void initForce(Body body, ref ForceObject obj)
+    public void initForce(ChronoBody body, ref ForceObject obj)
     {
         ChForce chForce = new ChForce();
 
@@ -490,27 +494,28 @@ public class ChronoPhysicsManager : MonoBehaviour
 
         BodyParams parameters = body.parameters;
 
-        ChVectorD negCogOffset = ChronoTools.Vector3ToChVectorD(-parameters.cogOffset);
+        //ChVectorD negCogOffset = ChronoTools.Vector3ToChVectorD(-parameters.cogOffset);
+        ChVectorD cogOffset = ChronoTools.Vector3ToChVectorD(parameters.originFromCoG);
 
-        if (obj.frame == RefFrame.WORLD)
+        if (obj.frame == RefFrame.WORLD_UNITY || obj.frame == RefFrame.WORLD_NED)
         {
             chForce.SetAlign(ChForce.AlignmentFrame.WORLD_DIR); 
             chForce.SetFrame(ChForce.ReferenceFrame.WORLD);
-            chForce.SetVpoint(negCogOffset); //TODO In world coords
+            chForce.SetVpoint(cogOffset); //TODO In world coords
 
             chTorque.SetAlign(ChForce.AlignmentFrame.WORLD_DIR);
             chTorque.SetFrame(ChForce.ReferenceFrame.WORLD);
-            chTorque.SetVpoint(negCogOffset);//TODO In world coords
+            chTorque.SetVpoint(cogOffset);//TODO In world coords
         }
         else
         {
             chForce.SetAlign(ChForce.AlignmentFrame.BODY_DIR);
             chForce.SetFrame(ChForce.ReferenceFrame.BODY);
-            chForce.SetVrelpoint(negCogOffset);
+            chForce.SetVrelpoint(cogOffset);
 
             chTorque.SetAlign(ChForce.AlignmentFrame.BODY_DIR);
             chTorque.SetFrame(ChForce.ReferenceFrame.BODY);
-            chTorque.SetVrelpoint(negCogOffset);
+            chTorque.SetVrelpoint(cogOffset);
         }
 
         obj.chForce = chForce;
@@ -591,9 +596,29 @@ public class ChronoPhysicsManager : MonoBehaviour
         return res;
     }
 
-    public BodyStateCh GetBodyState(Body body)
+    //public BodyStateCh GetBodyState(IBody body)
+    //{
+    //    return (body as ChronoBody).state;
+    //}
+
+    public override IBody CreateBody(BodyParams parameters, GameObject bodyGameobject)
     {
-        return body.state;
+        throw new System.NotImplementedException();
+    }
+
+    public override void AddForceListener(IForceListener listener, IBody body, RefFrame frame)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void RemoveForceListener(IBody body, IForceListener listener)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override BodyState GetBodyState(IBody body)
+    {
+        return (body as ChronoBody).state;
     }
 
     //protected ChForce CreateChForce(ChForce.ForceType type, ChVectorD forceVec)

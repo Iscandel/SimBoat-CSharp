@@ -70,3 +70,13 @@ public class HydrodynamicsComplex : MonoBehaviour
         return (transform.TransformDirection(force), transform.TransformDirection(torque));
     }
 }
+
+// Cl
+// AoA
+// 12   15  17.5  19   20   25    30    35   40    45    50    55   60    65    70    75   80    85
+// 0  0.2   0.4   0.6  0.8  0.87  0.92  0.9  0.87  0.83  0.81  0.7  0.58  0.52  0.45  0.37 0.25  0.2
+
+// Cl
+// 0    0.2   0.4   0.6  0.8   0.87   0.92  0.9  0.87  0.83  0.81  0.7   0.58  0.52  0.45  0.37  0.25  0.2
+// Drag
+// 0.15 0.15  0.15  0.15 0.15  0.18   0.21  0.3  0.35  0.37  0.41  0.48  0.53  0.62  0.75  0.85  1.0   1.03

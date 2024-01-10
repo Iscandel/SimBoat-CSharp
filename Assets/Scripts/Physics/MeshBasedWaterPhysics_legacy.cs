@@ -11,7 +11,7 @@ using UnityEngine.PlayerLoop;
 
 namespace Assets.Scripts.Physics
 {
-    public class MeshBasedWaterPhysics : MonoBehaviour, IForceListener, IPhysicsListener
+    public class MeshBasedWaterPhysics_legacy : test.PhysicsBody
     {
         internal struct VertexAndDepth
         {
@@ -95,10 +95,13 @@ namespace Assets.Scripts.Physics
 
         protected ForceTorque[] _forces;
 
+        //public float _mass = 100;
+        //public Vector3 _cogOffset = new Vector3(0, 0, 0);
+        //public Vector3 _diagInertia = new Vector3(50, 50, 50);
+
         public RefFrame _refFrame = RefFrame.WORLD_UNITY;
 
-        protected Vector3 _navCenter;
-        protected Vector3 _worldCenterOfMass;
+        public Vector3 _worldCenterOfMass;
 
         //protected Rigidbody _rigidbody;
 
@@ -123,23 +126,11 @@ namespace Assets.Scripts.Physics
 
         public int _pSlamming = 1;
 
-        public float _mass = 100;
-        public Vector3 _localCoMOffset = new Vector3(0, 0, 0);
-        public Vector3 _originFromCoG = new Vector3(0, 0, 0);
-        public Vector3 _diagInertia = new Vector3(50, 50, 50);
-
-        BodyParams _parameters;
-
         public bool _computeViscous = true;
         public bool _computePressure = true;
         public bool _computeSlamming = true;
 
         float _deltaTime;
-
-        BodyState _state;
-
-        IPhysicsManager _physicsManager;
-        IBody _body;
 
         // REMOVE
         //Crest.SampleHeightHelper _samplerTest;
@@ -148,7 +139,7 @@ namespace Assets.Scripts.Physics
         public float SubmergedArea { get => _submergedArea; set => _submergedArea = value; }
 
         // Start is called before the first frame update
-        protected void Start()
+        protected override void Start_impl()
         { 
         //Unity.Jobs.IJobParallelFor f;
 
@@ -193,42 +184,26 @@ namespace Assets.Scripts.Physics
 
             _deltaTime = Time.fixedDeltaTime;
 
-            GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
-            _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
-
-            _parameters = new BodyParams();
-            _parameters.mass = _mass;
-            _parameters.diagInertia = _diagInertia;
-            _parameters.originFromCoG = _originFromCoG;
-            _parameters.localCoMOffset = _localCoMOffset;
-
-            _body = _physicsManager.CreateBody(_parameters, gameObject);
-            _physicsManager.AddPhysicsEventListener(this);
-            _physicsManager.AddForceListener(this, _body, _refFrame);
-            //_physicsManager.Setc
-            _state = _physicsManager.GetBodyState(_body);
+            //
+            //_rigidbody = GetComponent<Rigidbody>();
+            //_rigidbody.useGravity = false;
+            //_rigidbody.detectCollisions = false;
+            //_rigidbody.inertiaTensor = _diagInertia;
+            //_rigidbody.mass = _mass;
+            //_rigidbody.centerOfMass = _cogOffset;
         }
 
-        protected void ComputePhysics(ref ForceTorque forces) 
+        protected override void ComputePhysics() 
         {
-            // Update the absolute position of the navigation frame
-            _navCenter = _state.worldCenterOfMass + transform.TransformVector(-_parameters.originFromCoG);
-            _worldCenterOfMass = _state.worldCenterOfMass;
+            Vector3 sumForces = new Vector3();
 
-            //List<int> indices = new List<int>();
-            //Vector3 sumForces = new Vector3();
+            Force fweight = ComputeWeight();
 
-            ForceTorque fweight = ComputeWeight();
-
-
-            //_rigidbody.AddForceAtPosition(fweight.force, fweight.appliPoint);
+            _rigidbody.AddForceAtPosition(fweight.force, fweight.appliPoint);
       
             bool status = true;
             //List<Force> forcesB = 
-            ForceTorque buoyancy = ComputeWaterPhysics(ref status);
-
-            forces += fweight;
-            forces += buoyancy;
+            ComputeWaterPhysics(ref status);
             //if (!status)
             //    return;
             //allForces.AddRange(forcesB);
@@ -256,19 +231,13 @@ namespace Assets.Scripts.Physics
             //}
         }
 
-        ForceTorque ComputeWeight()
+        Force ComputeWeight()
         {
-            ForceTorque force = new ForceTorque();
-            //Vector3 torque = new Vector3();
+            Force force = new Force();
+            Vector3 torque = new Vector3();
 
             force.force = _mass * UnityPhysicsConstants.G;
-            //force.appliPoint = _rigidbody.worldCenterOfMass;// this.transform.position;
-
-            if (_parameters.originFromCoG.AlmostEqual(Vector3.zero))
-                force.torque = Vector3.zero;
-            else
-                force.torque = Vector3.Cross(transform.TransformDirection(-_originFromCoG), force.force); //force.torque = Vector3.Cross(transform_state.worldCenterOfMass - _navCenter, force.force);
-            //force.torque = transform.TransformDirection(force.torque);
+            force.appliPoint = _rigidbody.worldCenterOfMass;// this.transform.position;
 
             //Debug.Log(force.y);
 
@@ -276,7 +245,7 @@ namespace Assets.Scripts.Physics
         }
 
 
-        ForceTorque ComputeWaterPhysics(ref bool status)
+       void ComputeWaterPhysics(ref bool status)
         {
             for (int i = 0; i < _forces.Length; i++)
             {
@@ -306,9 +275,10 @@ namespace Assets.Scripts.Physics
             {
                 Debug.LogError("Sampling error");
                 status = false;
-                return new ForceTorque();
+                return;// new List<Force>();
             }
 
+            _worldCenterOfMass = _rigidbody.worldCenterOfMass;
             _deltaTime = Time.fixedDeltaTime;
 
             //int[] ind = { 0, _trianglesAndVertices.Length };
@@ -375,7 +345,7 @@ namespace Assets.Scripts.Physics
             //Task.WaitAll(tasks.ToArray());
 
 
-            ForceTorque sumForces = new ForceTorque(); sumForces.force = Vector3.zero; sumForces.torque = Vector3.zero;
+            ForceTorque sumForces; sumForces.force = Vector3.zero; sumForces.torque = Vector3.zero;
             for(int i =  0; i < _forces.Length; i++)
             {
                 sumForces += _forces[i];
@@ -385,9 +355,8 @@ namespace Assets.Scripts.Physics
                 Debug.Log("Stop here");
 
 
-            return sumForces;
-           // _rigidbody.AddForce(sumForces.force);
-           // _rigidbody.AddTorque(sumForces.torque);
+            _rigidbody.AddForce(sumForces.force);
+            _rigidbody.AddTorque(sumForces.torque);
 
             //Debug.Log(this.name + " " + sumForces.force + " " + sumForces.torque);
             //Debug.Log("meth1" + " " + sumForces.force.ToString("F10") + " " + sumForces.torque.ToString("F10") + " " + Time.fixedTime);
@@ -959,19 +928,6 @@ namespace Assets.Scripts.Physics
         bool CompareNormals(Vector3 a, Vector3 b)
         {
             return (Vector3.Dot(a, b) >= 0);
-        }
-
-        public void ComputeForce(IBody body, ref ForceTorque forces, BodyState state)
-        {
-            ComputePhysics(ref forces); ;
-        }
-
-        public void OnPhysicsEvent(IPhysicsListener.EventType eventType)
-        {
-            if(eventType == IPhysicsListener.EventType.STATE_UPDATED)
-            {
-                _state = _physicsManager.GetBodyState(_body);
-            }
         }
     }
 }
