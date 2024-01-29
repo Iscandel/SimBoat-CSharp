@@ -206,7 +206,56 @@ namespace Assets.Scripts.Physics
             _physicsManager.AddPhysicsEventListener(this);
             _physicsManager.AddForceListener(this, _body, _refFrame);
             //_physicsManager.Setc
-            _state = _physicsManager.GetBodyState(_body);
+            _state = _physicsManager.GetBodyState(_body, RefFrame.UNITY);
+        }
+
+        void ClearDebugMesh()
+        {
+            _underwaterMesh.Clear();
+        }
+
+        void ShowDebugMesh()
+        {
+            List<Vector3> uvertices = new List<Vector3>();
+            List<int> utri = new List<int>();
+            List<Color> ucolor = new List<Color>();
+            List<Vector3> unormals = new List<Vector3>();
+            Color col = Color.black;// Color.yellow;
+
+            List<Force> forces = new List<Force>();
+
+            //
+            //Matrix4x4 toTransform = transform.worldToLocalMatrix;
+            Matrix4x4 toTransform = Matrix4x4.identity;
+
+            //_submergedSurface = 0;
+            foreach (DepthTriangle triangle in _submergedTriangles)
+            {
+                uvertices.Add(toTransform.MultiplyPoint(triangle.p0));
+                unormals.Add(toTransform.MultiplyVector(triangle.normal));
+                utri.Add(uvertices.Count - 1);
+                col.r = triangle.Slamming;
+                if (col.r < 0.2) col.a = 0; else col.a = 1;
+                //Debug.Log(col.r);
+                ucolor.Add(col);
+                uvertices.Add(toTransform.MultiplyPoint(triangle.p1));
+                unormals.Add(toTransform.MultiplyVector(triangle.normal));
+                utri.Add(uvertices.Count - 1);
+                ucolor.Add(col);
+                uvertices.Add(toTransform.MultiplyPoint(triangle.p2));
+                unormals.Add(toTransform.MultiplyVector(triangle.normal));
+                utri.Add(uvertices.Count - 1);
+                ucolor.Add(col);
+
+
+                _underwaterMesh.Clear();
+                _underwaterMesh.name = "underwater mesh";
+                _underwaterMesh.vertices = uvertices.ToArray();
+                _underwaterMesh.triangles = utri.ToArray();
+                _underwaterMesh.colors = ucolor.ToArray();
+                _underwaterMesh.normals = unormals.ToArray();
+                _underwaterMesh.RecalculateBounds();
+            }
         }
 
         protected void ComputePhysics(ref ForceTorque forces) 
@@ -249,11 +298,11 @@ namespace Assets.Scripts.Physics
             //    sumForces += fb.force;
             //}
 
-            //ClearDebugMesh();
-            //if (_isDebug)
-            //{
-            //    ShowDebugMesh();
-            //}
+            ClearDebugMesh();
+            if (_isDebug)
+            {
+                ShowDebugMesh();
+            }
         }
 
         ForceTorque ComputeWeight()
@@ -966,11 +1015,11 @@ namespace Assets.Scripts.Physics
             ComputePhysics(ref forces); ;
         }
 
-        public void OnPhysicsEvent(IPhysicsListener.EventType eventType)
+        public void OnPhysicsEvent(IPhysicsListener.EventType eventType, object data)
         {
             if(eventType == IPhysicsListener.EventType.STATE_UPDATED)
             {
-                _state = _physicsManager.GetBodyState(_body);
+                _state = _physicsManager.GetBodyState(_body, RefFrame.UNITY);
             }
         }
     }

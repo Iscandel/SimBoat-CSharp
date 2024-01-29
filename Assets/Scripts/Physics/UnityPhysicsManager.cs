@@ -51,6 +51,7 @@ public class UnityBody : IBody
     public BodyParams parameters;
     public Rigidbody rigidbody;
     public BodyState state;
+    //public BodyState NEDState;
     public List<UnityForceObject> forceObjects;
 }
 
@@ -70,6 +71,7 @@ public class UnityPhysicsManager : IPhysicsManager
             if (_instance == null)
             {
                 _instance = FindObjectOfType<UnityPhysicsManager>();
+                _instance.Init();
             }
 
             if (_instance == null)
@@ -87,6 +89,14 @@ public class UnityPhysicsManager : IPhysicsManager
         _bodies = new List<UnityBody>();
         _physicsListeners = new List<IPhysicsListener>();
 
+
+        FirstScript.PreUpdate += PreUpdate;
+    }
+
+    void Init()
+    {
+        _bodies = new List<UnityBody>();
+        _physicsListeners = new List<IPhysicsListener>();
 
         FirstScript.PreUpdate += PreUpdate;
     }
@@ -122,7 +132,7 @@ public class UnityPhysicsManager : IPhysicsManager
                         Transform transfo = rigidbody.gameObject.transform;
                         Vector3 unityForce;
                         Vector3 unityTorque;
-                        if (forceObject.frame == RefFrame.BODY_UNITY)
+                        if (forceObject.frame == RefFrame.BODY_NED)
                         {
                             unityForce = transfo.TransformDirection(MathTools.VectorNEDToUnity(force.force));
                             unityTorque = transfo.TransformDirection(MathTools.VectorNEDToUnity(force.torque));
@@ -162,11 +172,11 @@ public class UnityPhysicsManager : IPhysicsManager
             UpdateKinematics(ref body);
         }
         _oldTime = Time.fixedTime;
-        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.STATE_UPDATED);
-        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.START);
+        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.STATE_UPDATED, null);
+        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.START, null);
         //UpdateForcesTorques(_oldTime + Time.fixedDeltaTime);
         UpdateForces(_oldTime + Time.fixedDeltaTime);
-        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.END);
+        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.END, null);
     }
 
     private void LateFixedUpdate(float deltaTime)
@@ -180,11 +190,11 @@ public class UnityPhysicsManager : IPhysicsManager
 
     }
 
-    protected void TriggerPhysicsUpdateEvent(IPhysicsListener.EventType eventType)
+    protected void TriggerPhysicsUpdateEvent(IPhysicsListener.EventType eventType, object data)
     {
         foreach (IPhysicsListener physicsListener in _physicsListeners)
         {
-            physicsListener.OnPhysicsEvent(eventType);
+            physicsListener.OnPhysicsEvent(eventType, data);
         }
     }
 
@@ -234,9 +244,9 @@ public class UnityPhysicsManager : IPhysicsManager
         state.position = rigidbody.position;
         state.rotation = rigidbody.rotation;
         state.velocity = rigidbody.velocity;
-        state.velocity_body = transform.InverseTransformDirection(state.velocity);
+        state.velocity_body = rigidbody.transform.InverseTransformDirection(state.velocity);
         state.angularVelocity = rigidbody.angularVelocity;
-        state.angularVelocity_body = transform.InverseTransformDirection(state.angularVelocity_body);
+        state.angularVelocity_body = rigidbody.transform.InverseTransformDirection(state.angularVelocity_body);
 
         if (previous == null)
         {
@@ -265,9 +275,9 @@ public class UnityPhysicsManager : IPhysicsManager
         state.position = MathTools.PositionUnityToNED(rigidbody.position);
         state.rotation = MathTools.QuaternionUnityToNED(rigidbody.rotation);
         state.velocity = MathTools.VectorUnityToNED(rigidbody.velocity);
-        state.velocity_body = MathTools.VectorUnityToNED(transform.InverseTransformDirection(rigidbody.velocity));
+        state.velocity_body = MathTools.VectorUnityToNED(rigidbody.transform.InverseTransformDirection(rigidbody.velocity));
         state.angularVelocity = MathTools.AngularVectorUnityToNED(rigidbody.angularVelocity);
-        state.angularVelocity_body = MathTools.AngularVectorUnityToNED(transform.InverseTransformDirection(rigidbody.angularVelocity));
+        state.angularVelocity_body = MathTools.AngularVectorUnityToNED(rigidbody.transform.InverseTransformDirection(rigidbody.angularVelocity));
 
         if (previous == null)
         {
@@ -289,10 +299,30 @@ public class UnityPhysicsManager : IPhysicsManager
         return state;
     }
 
+    protected BodyState UnityStateToNED(BodyState unityState)
+    {
+        BodyState state = new BodyState();
+
+        state.position = MathTools.PositionUnityToNED(unityState.position);
+        state.rotation = MathTools.QuaternionUnityToNED(unityState.rotation);
+        state.velocity = MathTools.VectorUnityToNED(unityState.velocity);
+        state.velocity_body = MathTools.VectorUnityToNED(unityState.velocity_body);
+        state.angularVelocity = MathTools.AngularVectorUnityToNED(unityState.angularVelocity);
+        state.angularVelocity_body = MathTools.AngularVectorUnityToNED(state.angularVelocity_body);
+        state.acceleration = MathTools.VectorUnityToNED(unityState.acceleration);
+        state.acceleration_body = MathTools.VectorUnityToNED(unityState.acceleration_body);
+        state.angularAcceleration = MathTools.AngularVectorUnityToNED(unityState.angularAcceleration);
+        state.angularAcceleration_body = MathTools.AngularVectorUnityToNED(unityState.angularAcceleration_body);  
+
+        state.worldCenterOfMass = MathTools.PositionUnityToNED(unityState.worldCenterOfMass);
+
+        return state;
+    }
+
     protected void UpdateKinematics(ref UnityBody body)
     {
         // /!\ /!\ BodyState is a struct, so enforce reference
-        ref BodyState state = ref body.state;
+        //ref BodyState state = ref body.state;
         Rigidbody rigidbody = body.rigidbody;
 
         body.state = UnityToUnity(rigidbody, body.state, Time.fixedTime - _oldTime);
@@ -347,6 +377,8 @@ public class UnityPhysicsManager : IPhysicsManager
 
         _bodies.Add(body);
 
+        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.BODY_CREATED, body);
+        
         UpdateKinematics(ref body);
 
         return body;
@@ -442,8 +474,11 @@ public class UnityPhysicsManager : IPhysicsManager
         return res;
     }
 
-    public override BodyState GetBodyState(IBody body)
+    public override BodyState GetBodyState(IBody body, RefFrame frame)
     {
-        return (body as UnityBody).state;
+        if(frame == RefFrame.BODY_NED || frame == RefFrame.WORLD_NED || frame == RefFrame.NED)
+            return UnityStateToNED((body as UnityBody).state);
+        else
+            return (body as UnityBody).state;
     }
 }

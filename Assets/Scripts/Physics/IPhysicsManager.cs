@@ -11,7 +11,9 @@ public enum RefFrame
     WORLD_UNITY = 1,
     WORLD_NED = 2,
     BODY_UNITY = 4,
-    BODY_NED = 8
+    BODY_NED = 8,
+    NED = WORLD_NED | BODY_NED,
+    UNITY = WORLD_UNITY | BODY_UNITY
 }
 
 public struct ForceTorque
@@ -70,15 +72,16 @@ public interface IPhysicsListener
     {
         START,
         END,
-        STATE_UPDATED
+        STATE_UPDATED,
+        BODY_CREATED
     };
 
-    public void OnPhysicsEvent(EventType eventType);
+    public void OnPhysicsEvent(EventType eventType, object data);
 }
 
 public interface IForceListener
 {
-    public void ComputeForce(IBody body, ref ForceTorque force, BodyState state);
+    public void ComputeForce(IBody body, ref ForceTorque force, BodyState NEDState);
 }
 
 public abstract class IPhysicsManager : MonoBehaviour
@@ -88,7 +91,7 @@ public abstract class IPhysicsManager : MonoBehaviour
     public abstract void RemoveForceListener(IBody body, IForceListener listener);
     public abstract void AddPhysicsEventListener(IPhysicsListener listener);
     public abstract bool RemovePhysicsEventListener(IPhysicsListener listener);
-    public abstract BodyState GetBodyState(IBody body);
+    public abstract BodyState GetBodyState(IBody body, RefFrame frame);
         //static IPhysicsManager GetPhysicsManager()
         //{
         //}

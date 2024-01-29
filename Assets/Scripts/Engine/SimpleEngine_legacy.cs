@@ -2,8 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
+public class SimpleEngine_legacy : MonoBehaviour
 {
+    private Rigidbody _rigidbody;
     private float _propellerRPM;
     private float _rudderAngle;
 
@@ -17,24 +18,17 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
     public bool _simplifiedHeightDetection;
 
     private IWaterProvider _waterProvider;
-    private IPhysicsManager _physicsManager;
-
-    private IBody _body;
-    private BodyState _state;
 
 
     // Start is called before the first frame update
     void Start()
     {
+        _rigidbody = GetComponent<Rigidbody>();
         _simplifiedHeightDetection = true;
         //_heightOffset = 0;
 
         GameObject[] oceanGO = GameObject.FindGameObjectsWithTag("Ocean");
         _waterProvider = oceanGO[0].GetComponent<IWaterProvider>();
-
-        GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
-        _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
-        _physicsManager.AddPhysicsEventListener(this);
     }
 
     // Update is called once per frame
@@ -61,14 +55,14 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         _rudderAngle = angle * _maxRudderAngle;
     }
 
-    ForceTorque ComputeThrustForce()
+    Force ComputeThrustForce()
     {
-        Vector3 appliPoint = _state.worldCenterOfMass + _state.rotation * _thrustAppliPoint;
+        Vector3 appliPoint = _rigidbody.worldCenterOfMass + transform.TransformDirection(_thrustAppliPoint);
         Vector3 thrustDirection = _localThrustDirection;
 
         Quaternion rotRudder = Quaternion.Euler(0, _rudderAngle, 0);
         thrustDirection = rotRudder * thrustDirection;
-        Vector3 worldThrustDirection = _state.rotation * thrustDirection;
+        Vector3 worldThrustDirection = transform.rotation * thrustDirection;
 
         Debug.DrawLine(appliPoint, appliPoint + worldThrustDirection.normalized * 3, Color.magenta);
 
@@ -90,43 +84,23 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
                 waterHeight = 0;
 
         }
-        Matrix4x4 mat = Matrix4x4.TRS(_state.position, _state.rotation, new Vector3(1, 1, 1));
 
-        //if (transform.TransformPoint(_thrustAppliPoint).y + _heightOffset > waterHeight)
-        if ( mat.MultiplyPoint3x4(_thrustAppliPoint).z + _heightOffset > waterHeight)
+        if (transform.TransformPoint(_thrustAppliPoint).y + _heightOffset > waterHeight)
             thrust = 0;
 
         Vector3 thrustForce = worldThrustDirection * thrust;
 
-        ForceTorque force;
+        Force force;
         force.force = thrustForce;
-        force.torque = Vector3.Cross(_state.rotation * _thrustAppliPoint, thrustForce);
+        force.appliPoint = appliPoint;
 
         return force;
     }
 
-    public void OnPhysicsEvent(IPhysicsListener.EventType eventType, object data)
+    private void FixedUpdate()
     {
-        if (eventType == IPhysicsListener.EventType.STATE_UPDATED)
-        {
-            _state = _physicsManager.GetBodyState(_body, RefFrame.NED);
-        }
-        else if (eventType == IPhysicsListener.EventType.BODY_CREATED)
-        {
-            _body = (IBody) data;
-            _physicsManager.AddForceListener(this, _body, RefFrame.BODY_NED);
-        }
-    }
-
-    //private void FixedUpdate()
-    //{
-    //    Force force = ComputeThrustForce();
-    //    Debug.Log(force.force);
-    //    _rigidbody.AddForceAtPosition(force.force, force.appliPoint);
-    //}
-
-    public void ComputeForce(IBody body, ref ForceTorque force, BodyState state)
-    {
-        force = ComputeThrustForce();
+        Force force = ComputeThrustForce();
+        Debug.Log(force.force);
+        _rigidbody.AddForceAtPosition(force.force, force.appliPoint);
     }
 }
