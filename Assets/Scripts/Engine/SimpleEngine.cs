@@ -1,3 +1,4 @@
+using Assets.Scripts.Physics;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,6 +23,8 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
     private IBody _body;
     private BodyState _state;
 
+    public bool _isDebug;
+
 
     // Start is called before the first frame update
     void Start()
@@ -35,6 +38,15 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
         _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
         _physicsManager.AddPhysicsEventListener(this);
+
+        MeshBasedWaterPhysics boatForcesUnity = GetComponent<MeshBasedWaterPhysics>();
+
+        if (boatForcesUnity.Body != null)
+        {
+            _body = boatForcesUnity.Body;
+            // We provide forces in NED
+            _physicsManager.AddForceListener(this, _body, RefFrame.BODY_NED);
+        }
     }
 
     // Update is called once per frame
@@ -70,7 +82,12 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         thrustDirection = rotRudder * thrustDirection;
         Vector3 worldThrustDirection = _state.rotation * thrustDirection;
 
-        Debug.DrawLine(appliPoint, appliPoint + worldThrustDirection.normalized * 3, Color.magenta);
+        if (_isDebug)
+        {
+            Vector3 unityAppliPoint = MathTools.NEDToUnity(appliPoint.x, appliPoint.y, appliPoint.z);
+            Vector3 unityDirection = MathTools.VectorNEDToUnity(worldThrustDirection);
+            Debug.DrawLine(unityAppliPoint, unityAppliPoint + unityDirection.normalized * 3, Color.magenta);
+        }
 
         //float RHO = worldThrustPosition.y < _waterHeightPropellerPos ? UnityPhysicsConstants.RHO : UnityPhysicsConstants.RHO_AIR;
         float thrust = _propellerRPM;
@@ -99,8 +116,8 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         Vector3 thrustForce = worldThrustDirection * thrust;
 
         ForceTorque force;
-        force.force = thrustForce;
-        force.torque = Vector3.Cross(_state.rotation * _thrustAppliPoint, thrustForce);
+        force.force = Quaternion.Inverse(_state.rotation) * thrustForce;
+        force.torque = Quaternion.Inverse(_state.rotation) * Vector3.Cross(_state.rotation * _thrustAppliPoint, thrustForce);
 
         return force;
     }
@@ -109,6 +126,7 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
     {
         if (eventType == IPhysicsListener.EventType.STATE_UPDATED)
         {
+            // We want NED state
             _state = _physicsManager.GetBodyState(_body, RefFrame.NED);
         }
         else if (eventType == IPhysicsListener.EventType.BODY_CREATED)

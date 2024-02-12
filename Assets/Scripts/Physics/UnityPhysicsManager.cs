@@ -122,7 +122,7 @@ public class UnityPhysicsManager : IPhysicsManager
                         if (forceObject.frame == RefFrame.WORLD_NED)
                         {
                             unityForce = MathTools.VectorNEDToUnity(force.force);
-                            unityTorque = MathTools.VectorNEDToUnity(force.torque);
+                            unityTorque = MathTools.AngularVectorNEDToUnity(force.torque);
                         }
                         rigidbody.AddForceAtPosition(unityForce, rigidbody.worldCenterOfMass + rigidbody.transform.TransformDirection(body.parameters.originFromCoG));
                         rigidbody.AddTorque(unityTorque);
@@ -135,7 +135,7 @@ public class UnityPhysicsManager : IPhysicsManager
                         if (forceObject.frame == RefFrame.BODY_NED)
                         {
                             unityForce = transfo.TransformDirection(MathTools.VectorNEDToUnity(force.force));
-                            unityTorque = transfo.TransformDirection(MathTools.VectorNEDToUnity(force.torque));
+                            unityTorque = transfo.TransformDirection(MathTools.AngularVectorNEDToUnity(force.torque));
                         }
                         else
                         {
@@ -246,7 +246,7 @@ public class UnityPhysicsManager : IPhysicsManager
         state.velocity = rigidbody.velocity;
         state.velocity_body = rigidbody.transform.InverseTransformDirection(state.velocity);
         state.angularVelocity = rigidbody.angularVelocity;
-        state.angularVelocity_body = rigidbody.transform.InverseTransformDirection(state.angularVelocity_body);
+        state.angularVelocity_body = rigidbody.transform.InverseTransformDirection(state.angularVelocity);
 
         if (previous == null)
         {
@@ -308,7 +308,7 @@ public class UnityPhysicsManager : IPhysicsManager
         state.velocity = MathTools.VectorUnityToNED(unityState.velocity);
         state.velocity_body = MathTools.VectorUnityToNED(unityState.velocity_body);
         state.angularVelocity = MathTools.AngularVectorUnityToNED(unityState.angularVelocity);
-        state.angularVelocity_body = MathTools.AngularVectorUnityToNED(state.angularVelocity_body);
+        state.angularVelocity_body = MathTools.AngularVectorUnityToNED(unityState.angularVelocity_body);
         state.acceleration = MathTools.VectorUnityToNED(unityState.acceleration);
         state.acceleration_body = MathTools.VectorUnityToNED(unityState.acceleration_body);
         state.angularAcceleration = MathTools.AngularVectorUnityToNED(unityState.angularAcceleration);
@@ -374,6 +374,7 @@ public class UnityPhysicsManager : IPhysicsManager
         body.rigidbody.inertiaTensor = parameters.diagInertia;
         body.rigidbody.mass = (float)parameters.mass;
         body.rigidbody.centerOfMass = parameters.localCoMOffset;
+        body.rigidbody.angularDrag = 0;
 
         _bodies.Add(body);
 

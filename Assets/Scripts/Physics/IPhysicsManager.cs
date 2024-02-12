@@ -1,5 +1,6 @@
 ﻿using JetBrains.Annotations;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -92,7 +93,28 @@ public abstract class IPhysicsManager : MonoBehaviour
     public abstract void AddPhysicsEventListener(IPhysicsListener listener);
     public abstract bool RemovePhysicsEventListener(IPhysicsListener listener);
     public abstract BodyState GetBodyState(IBody body, RefFrame frame);
-        //static IPhysicsManager GetPhysicsManager()
-        //{
-        //}
+
+    public void LateFixedUpdate() { }
+
+    public IEnumerator OnLateFixedUpdate()
+    {
+        while(true) 
+        {
+            yield return new WaitForFixedUpdate();
+            LateFixedUpdate();
+        }
+    }
+
+    public void OnEnable()
+    {
+        StartCoroutine(OnLateFixedUpdate());
+    }
+
+    public void OnDisable()
+    {
+        StopCoroutine(OnLateFixedUpdate());
+    }
+    //static IPhysicsManager GetPhysicsManager()
+    //{
+    //}
 }

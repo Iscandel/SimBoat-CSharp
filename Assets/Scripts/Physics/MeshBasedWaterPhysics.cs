@@ -147,6 +147,8 @@ namespace Assets.Scripts.Physics
         public float MeshArea { get => _meshArea; set => _meshArea = value; }
         public float SubmergedArea { get => _submergedArea; set => _submergedArea = value; }
 
+        public IBody Body { get => _body; }
+
         // Start is called before the first frame update
         protected void Start()
         { 
