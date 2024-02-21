@@ -9,6 +9,7 @@ public class HydrodynamicsDampingSimple : MonoBehaviour, IForceListener, IPhysic
     MeshBasedWaterPhysics _boatForcesUnity;
 
     public float CX = 1.05f * 10;
+    public float CX2 = 0;
     public float CYuv = 1.05f * 10;
     public float CYur = 1.05f * 10;
     public float CY = 1.5f * 10;
@@ -67,7 +68,7 @@ public class HydrodynamicsDampingSimple : MonoBehaviour, IForceListener, IPhysic
         float RHO = UnityPhysicsConstants.RHO;
         float referenceArea = _surface;// _submergedSurface / 4;
 
-        force.force.x = -0.5f * RHO * referenceArea * CX /** Mathf.Abs(speed_body.y)*/ * speed_body.x;
+        force.force.x = -0.5f * RHO * referenceArea * (CX /** Mathf.Abs(speed_body.y)*/ * speed_body.x + CX2 * Mathf.Abs(speed_body.x) * speed_body.x);
         force.force.y = -0.5f * RHO * referenceArea * (CY * Mathf.Abs(speed_body.y) * speed_body.y + CYuv * speed_body.x * speed_body.y + CYur * speed_body.x * angularSpeed_body.z);
         force.force.z = -0.5f * RHO * referenceArea * CZ /** Mathf.Abs(speed_body.z)*/ * speed_body.z;
 

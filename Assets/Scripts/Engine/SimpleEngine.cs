@@ -78,7 +78,8 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         Vector3 appliPoint = _state.worldCenterOfMass + _state.rotation * _thrustAppliPoint;
         Vector3 thrustDirection = _localThrustDirection;
 
-        Quaternion rotRudder = Quaternion.Euler(0, _rudderAngle, 0);
+        Quaternion unityRotRudder = Quaternion.Euler(0, _rudderAngle, 0);
+        Quaternion rotRudder = MathTools.QuaternionUnityToNED(unityRotRudder);
         thrustDirection = rotRudder * thrustDirection;
         Vector3 worldThrustDirection = _state.rotation * thrustDirection;
 
