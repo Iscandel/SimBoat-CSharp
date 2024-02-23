@@ -15,6 +15,7 @@ public class HydrodynamicsDampingSimple : MonoBehaviour, IForceListener, IPhysic
     public float CY = 1.5f * 10;
     public float CZ = 0.5f * 10;
     public float CL = 0;
+    public float CLur = 0;
     public float CM = 0;
     public float CN = 1;
 
@@ -72,7 +73,7 @@ public class HydrodynamicsDampingSimple : MonoBehaviour, IForceListener, IPhysic
         force.force.y = -0.5f * RHO * referenceArea * (CY * Mathf.Abs(speed_body.y) * speed_body.y + CYuv * speed_body.x * speed_body.y + CYur * speed_body.x * angularSpeed_body.z);
         force.force.z = -0.5f * RHO * referenceArea * CZ /** Mathf.Abs(speed_body.z)*/ * speed_body.z;
 
-        force.torque.x = -0.5f * RHO * referenceArea * CL /** Mathf.Abs(angularSpeed.x)*/ * angularSpeed_body.x;
+        force.torque.x = -0.5f * RHO * referenceArea * (CL /** Mathf.Abs(angularSpeed.x)*/ * angularSpeed_body.x + CLur * speed_body.x * angularSpeed_body.z);
         force.torque.y = -0.5f * RHO * referenceArea * CM /** Mathf.Abs(angularSpeed.y)*/ * angularSpeed_body.y;
         force.torque.z = -0.5f * RHO * referenceArea * CN /** Mathf.Abs(angularSpeed.z)*/ * angularSpeed_body.z;
 
