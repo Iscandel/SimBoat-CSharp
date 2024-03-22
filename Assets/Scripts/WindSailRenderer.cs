@@ -16,8 +16,9 @@ public class WindSailRenderer : MonoBehaviour
     void Update()
     {
         Vector3 direction = WindManager.Instance.Direction;
+        float speed = WindManager.Instance.Speed;
 
-        _cloth.externalAcceleration = direction;
-        _cloth.randomAcceleration = direction * 2;
+        _cloth.externalAcceleration = direction * speed;
+        _cloth.randomAcceleration = Vector3.one * Mathf.Max(1.0f, speed / 4.0f);
     }
 }
