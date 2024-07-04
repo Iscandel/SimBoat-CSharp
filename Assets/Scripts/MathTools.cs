@@ -203,6 +203,11 @@ public static class MathTools
         return new Vector3(-rotationUnity.z, -rotationUnity.x, rotationUnity.y);
     }
 
+    public static Vector3 NEDToUnity(Vector3 ned)
+    {
+        return NEDToUnity(ned.x, ned.y, ned.z);
+    }
+
     public static Vector3 NEDToUnity(float x, float y, float z)
     {
         return new Vector3(y, -z, x);
@@ -216,5 +221,15 @@ public static class MathTools
     public static bool AlmostEqual(this Vector3 a, Vector3 b, float threshold = 0.005f)
     {
         return Vector3.SqrMagnitude(a - b) < threshold;
+    }
+
+    public static Vector3 Torque(Vector3 centerOfNavToAppliPoint, Vector3 force)
+    {
+        return Vector3.Cross(centerOfNavToAppliPoint, force);
+    }
+
+    public static Vector3 VelocityAt(Vector3 velocity, Vector3 angularVelocity, Vector3 centerToAppliPoint)
+    {
+        return velocity + Vector3.Cross(angularVelocity, centerToAppliPoint);
     }
 }
