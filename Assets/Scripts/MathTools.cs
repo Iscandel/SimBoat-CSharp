@@ -223,12 +223,22 @@ public static class MathTools
         return Vector3.SqrMagnitude(a - b) < threshold;
     }
 
-    public static Vector3 Torque(Vector3 centerOfNavToAppliPoint, Vector3 force)
+    public static Vector3 TorqueUnityToUnity(Vector3 centerOfNavToAppliPoint, Vector3 force)
     {
         return Vector3.Cross(centerOfNavToAppliPoint, force);
     }
 
-    public static Vector3 VelocityAt(Vector3 velocity, Vector3 angularVelocity, Vector3 centerToAppliPoint)
+    public static Vector3 TorqueNEDToNED(Vector3 centerOfNavToAppliPoint, Vector3 force)
+    {
+        return -(Vector3.Cross(centerOfNavToAppliPoint, force));
+    }
+
+    public static Vector3 VelocityAt_NED(Vector3 velocity, Vector3 angularVelocity, Vector3 centerToAppliPoint)
+    {
+        return velocity + AngularVectorUnityToNED(Vector3.Cross(angularVelocity, centerToAppliPoint));
+    }
+
+    public static Vector3 VelocityAt_Unity(Vector3 velocity, Vector3 angularVelocity, Vector3 centerToAppliPoint)
     {
         return velocity + Vector3.Cross(angularVelocity, centerToAppliPoint);
     }

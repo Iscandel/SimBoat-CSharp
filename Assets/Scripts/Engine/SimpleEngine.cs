@@ -101,7 +101,7 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         {
             float[] heights = new float[1];
             Vector3[] samples = new Vector3[1];
-            samples[0] = _thrustAppliPoint;
+            samples[0] = MathTools.NEDToUnity(appliPoint.x, appliPoint.y, appliPoint.z);
             if(_waterProvider.SampleHeightAt(samples, ref heights))
                 waterHeight = heights[0];
             else
