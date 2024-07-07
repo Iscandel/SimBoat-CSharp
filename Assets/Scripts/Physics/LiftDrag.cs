@@ -43,7 +43,7 @@ class LiftDrag
     /// </summary>
     /// <param name="state"></param>
     /// <param name="foilDirection"></param>
-    public ForceTorque ComputeForce(BodyState state, Vector3 fluidVector_body, Vector3 foilDirection_body)
+    public ForceTorque ComputeForce(BodyState state, Vector3 fluidVector_body, Vector3 foilDirection_body, float rho)
     {
         ForceTorque res = new ForceTorque();
 
@@ -62,7 +62,6 @@ class LiftDrag
         float drag = GetDragCoeff(aoa);
         float lift = GetLiftCoeff(aoa);
         float v = velocityAtRudder.magnitude;//2; 
-        float rho = 1026;
         Vector3 force = 0.5f * rho * _area * v * v * (drag * dragDir.normalized + lift * liftDir.normalized);
         res.force = force;
         res.torque = MathTools.TorqueNEDToNED(_appliPoint, force) * _scale;

@@ -47,6 +47,8 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
     [Tooltip("Angle / North"), Range(0, 360f)]
     public float _heading;
 
+    EntityEnvironment _environment;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -88,6 +90,8 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
         _liftDrag2.Scale = _scale;
         _liftDrag2.AppliPoint = _rudderAppliPoint;
         _liftDrag2.IsDebug = _isDebug;
+
+        _environment = GetComponent<EntityEnvironment>();
     }
 
 
@@ -157,8 +161,8 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
         //Vector3 pos = MathTools.NEDToUnity(_state.worldCenterOfMass);
         //DrawArrow.ForDebug(pos, MathTools.VectorNEDToUnity(_state.rotation * fluidVector_body.normalized), Color.yellow);
         //
-
-        res = _liftDrag.ComputeForce(_state, fluidVector_body, _rudderDirection);
+        
+        res = _liftDrag.ComputeForce(_state, fluidVector_body, _rudderDirection, _environment.GetRho());
 
         //_liftDrag2.ComputeForce2(_state, fluidVector_body, _rudderDirection);
 

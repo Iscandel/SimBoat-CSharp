@@ -2813,6 +2813,8 @@ GameObject:
   - component: {fileID: 778836087}
   - component: {fileID: 778836086}
   - component: {fileID: 778836094}
+  - component: {fileID: 778836095}
+  - component: {fileID: 778836096}
   m_Layer: 0
   m_Name: SailingYachtRudder
   m_TagString: Untagged
@@ -4059,6 +4061,41 @@ MonoBehaviour:
   _torqueFactor: 500
   _isDebug: 0
   _heading: 0
+--- !u!114 &778836095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 778836085}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aad72460046273e45ad8c10738a8989e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maxRudderAngle: 35
+  _rudderAppliPoint: {x: -4, y: 0, z: 0}
+  _area: 0.32
+  _scale: 5
+  _heightOffset: -5
+  _simplifiedHeightDetection: 1
+  _torqueFactor: 1
+  _isDebug: 0
+  _heading: 0
+--- !u!114 &778836096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 778836085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c86ef4918558194f96a1bc4ec13b74f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _currentVector: {x: 0, y: 0, z: 0}
+  _rho: 1026
 --- !u!1 &795577571
 GameObject:
   m_ObjectHideFlags: 0

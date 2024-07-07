@@ -18,6 +18,8 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
     private IWaterProvider _waterProvider;
     private IPhysicsManager _physicsManager;
 
+    private EntityEnvironment _environment;
+
     private IBody _body;
     private BodyState _state;           // NED
 
@@ -62,6 +64,8 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
 
         const float absSpeed = 20;
         _actuatorDynamics = new LinearActuatorDynamics(absSpeed);
+
+        _environment = GetComponent<EntityEnvironment>();
     }
 
     // Update is called once per frame
@@ -129,7 +133,7 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
         //// NED velocity at rudder in local coords
         Vector3 velocityAtRudder = MathTools.VelocityAt_NEDToNED(_state.velocity_body, _state.angularVelocity_body, _rudderAppliPoint);
         float v = velocityAtRudder.magnitude;
-        float rho = 1026;
+        float rho = _environment.GetRho();
         Vector3 force = Vector3.zero;
         force.y = -0.5f * rho * _area * v * v * _rudderAngle / (float)_maxRudderAngle * _scale;
         res.torque = MathTools.TorqueNEDToNED(_rudderAppliPoint, force) * _scale;
