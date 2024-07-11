@@ -132,16 +132,19 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
 
         //// NED velocity at rudder in local coords
         Vector3 velocityAtRudder = MathTools.VelocityAt_NEDToNED(_state.velocity_body, _state.angularVelocity_body, _rudderAppliPoint);
-        float v = velocityAtRudder.magnitude;
+        float v = _state.velocity_body.magnitude;// velocityAtRudder.magnitude;
         float rho = _environment.GetRho();
         Vector3 force = Vector3.zero;
-        force.y = -0.5f * rho * _area * v * v * _rudderAngle / (float)_maxRudderAngle * _scale;
+        force.y = 0.5f * rho * _area * v * v * _rudderAngle / (float)_maxRudderAngle * _scale;
         res.torque = MathTools.TorqueNEDToNED(_rudderAppliPoint, force) * _scale;
 
         // Ensure minimum torque when turning
         float rudderAngle = -_rudderAngle;
-        res.torque.z = res.torque.z < 0 ? Mathf.Min(res.torque.z, rudderAngle * _torqueFactor) :
-                       res.torque.z > 0 ? Mathf.Max(res.torque.z, rudderAngle * _torqueFactor) : rudderAngle * _torqueFactor;
+        const float eps = 1e-2f;
+        res.torque.z = res.torque.z < -eps ? Mathf.Min(res.torque.z, rudderAngle * _torqueFactor) :
+                       res.torque.z > eps ? Mathf.Max(res.torque.z, rudderAngle * _torqueFactor) : rudderAngle * _torqueFactor;
+
+        Debug.Log(res.torque);
 
         if (_isDebug)
         {
@@ -149,7 +152,7 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
             Debug.DrawLine(appliPointUnity, appliPointUnity + unityDirection.normalized * 3, Color.magenta);
         }
 
-        res.force.x = 35000;
+        //res.force.x = 35000;
         return res;
     }
 
