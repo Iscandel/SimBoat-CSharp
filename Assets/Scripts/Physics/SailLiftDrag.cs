@@ -132,8 +132,8 @@ namespace Assets.Scripts.Physics
             for(int i = 0; i < 1; i++)
             {
                 Vector3 mastDirection_body = Quaternion.Inverse(_state.rotation) * MathTools.VectorUnityToNED(_mast.transform.rotation * Vector3.forward);
-                Vector3 fluidVector_body = MathTools.VectorUnityToNED(Quaternion.Inverse(_state.rotation) * _windManager.WindVector);
-                float rollAccount = (0.5f * Mathf.PI - _state.angularVelocity.x) / (0.5f * Mathf.PI);
+                Vector3 fluidVector_body = Quaternion.Inverse(_state.rotation) * MathTools.VectorUnityToNED(_windManager.WindVector);
+                float rollAccount = (0.5f * Mathf.PI - Mathf.Abs(_state.angularVelocity.x)) / (0.5f * Mathf.PI);
                 // Should take appli point position in account with sail rotation
                 force += _liftDrag[i].ComputeForce(_state, fluidVector_body, mastDirection_body, 1026) * rollAccount;// _environment.GetRho());
 
