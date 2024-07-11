@@ -48,26 +48,26 @@ class LiftDrag
         ForceTorque res = new ForceTorque();
 
         Vector3 velocityAtRudder = MathTools.VelocityAt_NEDToNED(state.velocity_body, state.angularVelocity_body, _appliPoint);
-        var bodyApparentFluid = ComputeApparentWater(fluidVector_body, velocityAtRudder);// _state.velocity_body);
+        var apparentFluid_body = ComputeApparentWater(fluidVector_body, velocityAtRudder);// _state.velocity_body);
 
         // Simplify to only take into account forward speed
-        bodyApparentFluid.z = 0;
+        apparentFluid_body.z = 0;
 
-        Vector3 dragDir = bodyApparentFluid;
+        Vector3 dragDir = apparentFluid_body;
 
         //apparentWater.x = -5;
 
-        Vector3 liftDir = ComputeLiftDirection(bodyApparentFluid, -foilDirection_body);
-        float aoa = ComputeAoA(bodyApparentFluid, -foilDirection_body); // All going backward
+        Vector3 liftDir = ComputeLiftDirection(apparentFluid_body, -foilDirection_body);
+        float aoa = ComputeAoA(apparentFluid_body, -foilDirection_body); // All going backward
         float drag = GetDragCoeff(aoa);
         float lift = GetLiftCoeff(aoa);
-        float v = velocityAtRudder.magnitude;//2; 
+        float v = apparentFluid_body.magnitude;//2; 
         Vector3 force = 0.5f * rho * _area * v * v * (drag * dragDir.normalized + lift * liftDir.normalized);
         res.force = force;
         res.torque = MathTools.TorqueNEDToNED(_appliPoint, force) * _scale;
 
         if (_isDebug)
-            DrawDebug(state, dragDir, liftDir, force, res.torque, bodyApparentFluid, aoa);
+            DrawDebug(state, dragDir, liftDir, force, res.torque, apparentFluid_body, aoa);
 
         return res;
     }

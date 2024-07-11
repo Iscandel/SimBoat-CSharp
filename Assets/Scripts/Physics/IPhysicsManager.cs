@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -34,7 +35,20 @@ public struct ForceTorque
     public Vector3 force;
     public Vector3 torque;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ForceTorque operator +(ForceTorque a, ForceTorque b) => new ForceTorque(a.force + b.force, a.torque + b.torque);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ForceTorque operator *(ForceTorque a, float d)
+    {
+        return new ForceTorque(a.force * d, a.torque * d);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ForceTorque operator *(float d, ForceTorque a)
+    {
+        return new ForceTorque(a.force * d, a.torque * d);
+    }
 }
 
 public struct Force

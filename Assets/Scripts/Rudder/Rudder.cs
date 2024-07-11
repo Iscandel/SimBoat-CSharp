@@ -94,9 +94,6 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
         _environment = GetComponent<EntityEnvironment>();
     }
 
-
-
-
     // Update is called once per frame
     void Update()
     {       
@@ -180,7 +177,7 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
             Debug.DrawLine(appliPointUnity, appliPointUnity + unityDirection.normalized * 3, Color.magenta);
         }
 
-        res.force.x = 35000;
+        //res.force.x = 35000;
         return res;
     }
 

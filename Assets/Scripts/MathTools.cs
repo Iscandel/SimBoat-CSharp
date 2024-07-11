@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -223,6 +224,12 @@ public static class MathTools
         return Vector3.SqrMagnitude(a - b) < threshold;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3 CrossNED(Vector3 lhs, Vector3 rhs)
+    {
+        return new Vector3(lhs.y * rhs.z - lhs.z * rhs.y, lhs.z * rhs.x - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x);
+    }
+
     public static Vector3 TorqueUnityToUnity(Vector3 centerOfNavToAppliPoint, Vector3 force)
     {
         return Vector3.Cross(centerOfNavToAppliPoint, force);
@@ -230,13 +237,13 @@ public static class MathTools
 
     public static Vector3 TorqueNEDToNED(Vector3 centerOfNavToAppliPoint, Vector3 force)
     {
-        return -(Vector3.Cross(centerOfNavToAppliPoint, force));
+        return (Vector3.Cross(centerOfNavToAppliPoint, force));
     }
 
     public static Vector3 VelocityAt_NEDToNED(Vector3 velocity, Vector3 angularVelocity, Vector3 centerToAppliPoint)
     {
         // Cross is in Unity frame, so we have to convert
-        return velocity + (-(Vector3.Cross(angularVelocity, centerToAppliPoint)));
+        return velocity + ((Vector3.Cross(angularVelocity, centerToAppliPoint)));
     }
 
     public static Vector3 VelocityAt_Unity(Vector3 velocity, Vector3 angularVelocity, Vector3 centerToAppliPoint)
