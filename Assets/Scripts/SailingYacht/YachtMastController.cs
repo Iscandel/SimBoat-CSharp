@@ -34,6 +34,11 @@ public class YachtMastController : MonoBehaviour
         _actuatorDynamics.SetSetpoint(setpoint);  
     }
 
+    public void SetSetpoint(float setpoint)
+    {
+        _actuatorDynamics.SetSetpoint(setpoint);
+    }
+
     private void FixedUpdate()
     {
         _actuatorDynamics.Update(Time.fixedDeltaTime);

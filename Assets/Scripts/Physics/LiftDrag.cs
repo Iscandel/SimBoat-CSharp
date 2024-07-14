@@ -13,9 +13,9 @@ class LiftDrag
         _isDebug = false;
     }
 
-    private Vector3 ComputeApparentWater(Vector3 currentBody, Vector3 velocityBody)
+    private Vector3 ComputeApparentWater(Vector3 fluidVector_body, Vector3 velocityVector_body)
     {
-        return currentBody - velocityBody;
+        return fluidVector_body - velocityVector_body;
     }
 
     private float ComputeAoA(Vector3 apparentFluid, Vector3 foilDirection)
@@ -47,8 +47,8 @@ class LiftDrag
     {
         ForceTorque res = new ForceTorque();
 
-        Vector3 velocityAtRudder = MathTools.VelocityAt_NEDToNED(state.velocity_body, state.angularVelocity_body, _appliPoint);
-        var apparentFluid_body = ComputeApparentWater(fluidVector_body, velocityAtRudder);// _state.velocity_body);
+        Vector3 velocityAtAppliPoint = MathTools.VelocityAt_NEDToNED(state.velocity_body, state.angularVelocity_body, _appliPoint);
+        var apparentFluid_body = ComputeApparentWater(fluidVector_body, velocityAtAppliPoint);// _state.velocity_body);
 
         // Simplify to only take into account forward speed
         apparentFluid_body.z = 0;

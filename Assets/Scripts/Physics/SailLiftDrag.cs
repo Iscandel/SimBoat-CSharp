@@ -24,6 +24,7 @@ namespace Assets.Scripts.Physics
         public List<Vector3> _CoEList;
 
         public GameObject _mast;
+        public YachtMastController _mastController;
 
         private IPhysicsManager _physicsManager;
         private IBody _body;
@@ -105,7 +106,8 @@ namespace Assets.Scripts.Physics
         // Update is called once per frame
         void Update()
         {
-
+            float angle = FindOptimalAngle(0, 1026);
+            _mastController.SetSetpoint(angle);
         }
 
         protected ForceTorque ComputeSailForce(Vector3 direction, Vector3 velocity, float cx, float area, Vector3 appliPoint)
@@ -128,14 +130,21 @@ namespace Assets.Scripts.Physics
 
         public void ComputeForce(IBody body, ref ForceTorque force, BodyState state)
         {
+            float rho = 1026;
+
             //for(int i = 0; i < _areaList.Count; i++)
             for(int i = 0; i < 1; i++)
             {
                 Vector3 mastDirection_body = Quaternion.Inverse(_state.rotation) * MathTools.VectorUnityToNED(_mast.transform.rotation * Vector3.forward);
                 Vector3 fluidVector_body = Quaternion.Inverse(_state.rotation) * MathTools.VectorUnityToNED(_windManager.WindVector);
-                float rollAccount = (0.5f * Mathf.PI - Mathf.Abs(_state.angularVelocity.x)) / (0.5f * Mathf.PI);
+                // Wind force is less efficient when the boat has heeling (0 for pi/2, 1 for 0 degrees)
+                float roll = 0, pitch = 0, yaw = 0;
+                MathTools.GetEulerAngleDegrees(_state.rotation, ref roll, ref pitch, ref yaw);
+               
+                float rollAccount = (90.0f - Mathf.Abs(roll)) / 90.0f;
                 // Should take appli point position in account with sail rotation
-                force += _liftDrag[i].ComputeForce(_state, fluidVector_body, mastDirection_body, 1026) * rollAccount;// _environment.GetRho());
+                force += _liftDrag[i].ComputeForce(_state, fluidVector_body, mastDirection_body, rho) * rollAccount;// _environment.GetRho());
+                Debug.Log("ROOOOOOLLLLLLLLL " + roll + " //// " + force.force );
 
 
                 //// Unity body frame
@@ -166,11 +175,39 @@ namespace Assets.Scripts.Physics
                 //force.force = new Vector3(0, -10000, 0);
                 //force.torque += Vector3.Cross(new Vector3(0, 0, -6.88f), force.force);
 
-                Debug.LogWarning("SO " + force.force + " " + force.torque);
+                //Debug.LogWarning("SO " + force.force + " " + force.torque);
+            }
+        }
+
+        float FindOptimalAngle(int sailIndex, float rho)
+        {
+            int optimalAngle = 0;
+            float bestForce = 0;
+            int maxAngle = 90;
+            Vector3 fluidVector_body = Quaternion.Inverse(_state.rotation) * MathTools.VectorUnityToNED(_windManager.WindVector);
+
+            for(int angle = -maxAngle; angle <= maxAngle; angle+=5)
+            {
+                var quat = Quaternion.Euler(0, angle, 0);
+                ForceTorque force = new ForceTorque();
+                Vector3 mastDirection_body = /*Quaternion.Inverse(_state.rotation) **/ MathTools.VectorUnityToNED(quat * Vector3.forward);
+                
+                // Wind force is less efficient when the boat has heeling 
+                float rollAccount = (0.5f * Mathf.PI - Mathf.Abs(_state.angularVelocity.x)) / (0.5f * Mathf.PI);
+                // Should take appli point position in account with sail rotation
+                _liftDrag[sailIndex].IsDebug = false;
+                force += _liftDrag[sailIndex].ComputeForce(_state, fluidVector_body, mastDirection_body, rho) * rollAccount;// _environment.GetRho());
+                _liftDrag[sailIndex].IsDebug = _isDebug;
+
+                float currentValue = Vector3.Dot(force.force, new Vector3(1, 0, 0));
+                if (currentValue > bestForce)
+                {
+                    bestForce = currentValue;
+                    optimalAngle = angle;
+                }
             }
 
-            //force += ComputeSailForce();
-            //throw new System.NotImplementedException();
+            return optimalAngle;
         }
 
         public void OnPhysicsEvent(IPhysicsListener.EventType eventType, object data)

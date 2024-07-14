@@ -250,4 +250,104 @@ public static class MathTools
     {
         return velocity + Vector3.Cross(angularVelocity, centerToAppliPoint);
     }
+
+    public static Vector3 RotationToEuler(Matrix4x4 matrix, int axis0, int axis1, int axis2)
+    {
+        Vector3 res = new Vector3();
+
+        int iodd = ((axis0 + 1) % 3 == axis1) ? 0 : 1;
+        bool odd = iodd == 1 ? true : false;
+        int i = axis0;
+        int j = (axis0 + 1 + iodd) % 3;
+        int k = (axis0 + 2 - iodd) % 3;
+
+        if (axis0 == axis2)
+        {
+            res[0] = Mathf.Atan2(matrix[j, i], matrix[k, i]);
+            if ((odd && res[0] < 0) || ((!odd) && res[0] > 0))
+            {
+                if (res[0] > 0)
+                {
+                    res[0] -= Mathf.PI;
+                }
+                else
+                {
+                    res[0] += Mathf.PI;
+                }
+                float s2 = new Vector2(matrix[j, i], matrix[k, i]).magnitude;
+                res[1] = -Mathf.Atan2(s2, matrix[i, i]);
+            }
+            else
+            {
+                float s2 = new Vector2(matrix[j, i], matrix[k, i]).magnitude;
+                res[1] = Mathf.Atan2(s2, matrix[i, i]);
+            }
+
+            // With a=(0,1,0), we have i=0; j=1; k=2, and after computing the first two angles,
+            // we can compute their respective rotation, and apply its inverse to M. Since the result must
+            // be a rotation around x, we have:
+            //
+            //  c2  s1.s2 c1.s2                   1  0   0 
+            //  0   c1    -s1       *    M    =   0  c3  s3
+            //  -s2 s1.c2 c1.c2                   0 -s3  c3
+            //
+            //  Thus:  m11.c1 - m21.s1 = c3  &   m12.c1 - m22.s1 = s3
+
+            float s1 = Mathf.Sin(res[0]);
+            float c1 = Mathf.Cos(res[0]);
+            res[2] = Mathf.Atan2(c1 * matrix[j, k] - s1 * matrix[k, k], c1 * matrix[j, j] - s1 * matrix[k, j]);
+        }
+        else
+        {
+            res[0] = Mathf.Atan2(matrix[j, k], matrix[k, k]);
+            float c2 = new Vector2(matrix[i, i], matrix[i, j]).magnitude;
+            if ((odd && res[0] < 0) || ((!odd) && res[0] > 0))
+            {
+                if (res[0] > 0)
+                {
+                    res[0] -= Mathf.PI;
+                }
+                else
+                {
+                    res[0] += Mathf.PI;
+                }
+                res[1] = Mathf.Atan2(-matrix[i, k], -c2);
+            }
+            else
+                res[1] = Mathf.Atan2(-matrix[i, k], c2);
+            float s1 = Mathf.Sin(res[0]);
+            float c1 = Mathf.Cos(res[0]);
+            res[2] = Mathf.Atan2(s1 * matrix[k, i] - c1 * matrix[j, i], c1 * matrix[j, j] - s1 * matrix[k, j]);
+        }
+        if (!odd)
+            res = -res;
+
+        return res;
+    }
+
+    public static void GetEulerAngleDegrees(Quaternion quat, ref float roll, ref float pitch, ref float yaw)
+    {
+        Matrix4x4 mat = Matrix4x4.Rotate(quat);
+        Vector3 euler = RotationToEuler(mat, 2, 1, 0);
+
+        yaw = euler.x * Mathf.Rad2Deg;
+        pitch = euler.y * Mathf.Rad2Deg;
+        roll = euler.z * Mathf.Rad2Deg;
+
+        if (pitch > 90)
+        {
+            pitch = 180 - pitch;
+            roll += 180;
+            yaw += 180;
+        }
+        else if (pitch < -90)
+        {
+            pitch = -180 - pitch;
+            roll -= 180;
+            yaw -= 180;
+        }
+
+        roll = (roll > 180.0f) ? (roll - 360.0f) : ((roll < -180.0f) ? (roll + 360.0f) : roll);
+        yaw = (yaw > 180.0f) ? (yaw - 360.0f) : ((yaw < -180.0f) ? (yaw + 360.0f) : yaw);
+    }
 }

@@ -357,6 +357,9 @@ public class ChronoPhysicsManager : IPhysicsManager
 
         thisbody.chBody.SetFrame_REF_to_abs(new ChFrameD(chPos, quat));
 
+        throw new System.Exception();
+        //Fix the following
+
         this.gameObject.transform.position = pos;
         this.gameObject.transform.eulerAngles = unityQuat.eulerAngles;
 
