@@ -106,7 +106,7 @@ class LiftDrag
     Vector3 ComputeLiftDirection(Vector3 apparentFluid, Vector3 oppositeFoilDirection_body)
     {
         // /!\ Unity angle convention, but returns an appropriate NED vector
-        float angle = Vector3.SignedAngle(-apparentFluid, oppositeFoilDirection_body, new Vector3(0, 0, 1));
+        float angle = Vector3.SignedAngle(apparentFluid, oppositeFoilDirection_body, new Vector3(0, 0, 1));
         float rotAngle = 0;
         if (Mathf.Abs(angle) < 180)
             rotAngle = -90 * Mathf.Sign(angle); // Negative rotation for positive "angle"

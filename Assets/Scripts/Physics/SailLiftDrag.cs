@@ -23,6 +23,8 @@ namespace Assets.Scripts.Physics
         //public List<List<float>> _dragCoeffList;
         public List<Vector3> _CoEList;
 
+        public bool _computeOptimalAngle;
+
         public GameObject _mast;
         public YachtMastController _mastController;
 
@@ -106,8 +108,11 @@ namespace Assets.Scripts.Physics
         // Update is called once per frame
         void Update()
         {
-            float angle = FindOptimalAngle(0, 1026);
-            _mastController.SetSetpoint(angle);
+            if (_computeOptimalAngle)
+            {
+                float angle = FindOptimalAngle(0, 1026);
+                _mastController.SetSetpoint(angle);
+            }
         }
 
         protected ForceTorque ComputeSailForce(Vector3 direction, Vector3 velocity, float cx, float area, Vector3 appliPoint)
@@ -144,6 +149,8 @@ namespace Assets.Scripts.Physics
                 float rollAccount = (90.0f - Mathf.Abs(roll)) / 90.0f;
                 // Should take appli point position in account with sail rotation
                 force += _liftDrag[i].ComputeForce(_state, fluidVector_body, mastDirection_body, rho) * rollAccount;// _environment.GetRho());
+                force.force = Vector3.zero;
+                force.torque = Vector3.zero;
                 Debug.Log("ROOOOOOLLLLLLLLL " + roll + " //// " + force.force );
 
 
