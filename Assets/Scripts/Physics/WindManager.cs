@@ -73,6 +73,7 @@ public class WindManager : MonoBehaviour
             _arrow.SetActive(true);
         else _arrow.SetActive(false);
 
+        _arrow.transform.position = Camera.current.transform.position + Camera.current.transform.forward * 6 + Camera.current.transform.right * 1.5f;
         _arrow.transform.rotation = Quaternion.Euler(0, Heading, 0);
     }
 }
