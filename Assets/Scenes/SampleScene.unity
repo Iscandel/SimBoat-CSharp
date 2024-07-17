@@ -1695,7 +1695,9 @@ MonoBehaviour:
   _CoEList:
   - {x: 0, y: 6.87, z: 0}
   - {x: 0, y: 4.6, z: 2}
+  _computeOptimalAngle: 0
   _mast: {fileID: 0}
+  _mastController: {fileID: 0}
   _isDebug: 0
 --- !u!1 &305829293
 GameObject:
@@ -3587,7 +3589,9 @@ MonoBehaviour:
   _CoEList:
   - {x: 0, y: 0, z: -6.87}
   - {x: 2, y: 0, z: -4.6}
+  _computeOptimalAngle: 1
   _mast: {fileID: 2034870252}
+  _mastController: {fileID: 778836097}
   _isDebug: 0
 --- !u!114 &778836087
 MonoBehaviour:
