@@ -1,4 +1,4 @@
-using Assets.Scripts.Physics;
+using Sim.Physics;
 using Palmmedia.ReportGenerator.Core.CodeAnalysis;
 using System;
 using System.Collections;
@@ -151,7 +151,7 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
 
         //if (transform.TransformPoint(_thrustAppliPoint).y + _heightOffset > waterHeight)
 
-        Vector3 fluidVector_body = Vector3.zero;
+        Vector3 fluidVector_body = Quaternion.Inverse(_state.rotation) * _environment.GetCurrentVector_WorldNED();
 
         // TODO Remove
         //fluidVector_body = MathTools.VectorUnityToNED(Quaternion.Euler(0, _heading, 0) * Vector3.forward);

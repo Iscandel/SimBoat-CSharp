@@ -19,7 +19,7 @@ public class EntityEnvironment : MonoBehaviour
         
     }
 
-    public Vector3 GetCurrentVector_NED()
+    public Vector3 GetCurrentVector_WorldNED()
     {
         return _currentVector;
     }

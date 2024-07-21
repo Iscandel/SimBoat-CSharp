@@ -1,8 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-class LiftDrag
+
+public class LiftDrag
 {
+    public event Action<Vector3, Vector3> OnSailLiftDragComputation = delegate { };
+
     public LiftDrag()
     {
         _appliPoint = Vector3.zero;
@@ -65,6 +69,8 @@ class LiftDrag
         Vector3 force = 0.5f * rho * _area * v * v * (drag * dragDir.normalized + lift * liftDir.normalized);
         res.force = force;
         res.torque = MathTools.TorqueNEDToNED(_appliPoint, force) * _scale;
+
+        OnSailLiftDragComputation(res.force, res.torque);
 
         if (_isDebug)
             DrawDebug(state, dragDir, liftDir, force, res.torque, apparentFluid_body, aoa);

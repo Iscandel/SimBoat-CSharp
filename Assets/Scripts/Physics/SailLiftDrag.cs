@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 
-namespace Assets.Scripts.Physics
+namespace Sim.Physics
 {
     public class SailLiftDrag : MonoBehaviour, IForceListener, IPhysicsListener
     {
@@ -250,6 +250,12 @@ namespace Assets.Scripts.Physics
         public float GetCoeff(float angle, AnimationCurve curve)
         {
             return curve.Evaluate(angle);
+        }
+
+        public void AddLiftDragListener(LiftDragForceListener listener)
+        {
+            listener.AddListener(_liftDrag[0]);
+            listener.AddListener(_liftDrag[1]);
         }
 
         // Cl

@@ -9,7 +9,7 @@ using Unity.VisualScripting;
 using System.Threading.Tasks;
 using UnityEngine.PlayerLoop;
 
-namespace Assets.Scripts.Physics
+namespace Sim.Physics
 {
     public class MeshBasedWaterPhysics : MonoBehaviour, IForceListener, IPhysicsListener
     {

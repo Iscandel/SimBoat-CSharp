@@ -1,4 +1,4 @@
-using Assets.Scripts.Physics;
+using Sim.Physics;
 using Palmmedia.ReportGenerator.Core.CodeAnalysis;
 using System;
 using System.Collections;
@@ -144,10 +144,9 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
         res.torque.z = res.torque.z < -eps ? Mathf.Min(res.torque.z, rudderAngle * _torqueFactor) :
                        res.torque.z > eps ? Mathf.Max(res.torque.z, rudderAngle * _torqueFactor) : rudderAngle * _torqueFactor;
 
-        Debug.Log(res.torque);
-
         if (_isDebug)
         {
+            Debug.Log(res.torque);
             Vector3 unityDirection = (Quaternion.Euler(0, _rudderAngle, 0) * MathTools.QuaternionNEDtoUnity(_state.rotation)) * Vector3.back;
             Debug.DrawLine(appliPointUnity, appliPointUnity + unityDirection.normalized * 3, Color.magenta);
         }
