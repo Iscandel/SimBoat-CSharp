@@ -12,11 +12,14 @@ public class YachtMastController : MonoBehaviour
     private float _currentAngle;
     private float _lastAngle;
 
+    private HingeJoint _joint;
+
     // Start is called before the first frame update
     void Start()
     {
         _actuatorDynamics = new LinearActuatorDynamics(_rotationSpeed);
         _currentAngle = _lastAngle = 0;
+        _joint = GetComponentInChildren<HingeJoint>();
     }
 
     // Update is called once per frame
@@ -43,10 +46,17 @@ public class YachtMastController : MonoBehaviour
     {
         _actuatorDynamics.Update(Time.fixedDeltaTime);
         _currentAngle = _actuatorDynamics.GetState();
+        
+        var rigidbody = GetComponent<Rigidbody>();
+        _joint.connectedBody = rigidbody;
 
         Vector3 worldPoint = transform.position + transform.rotation * _pivot;
-
-        _mast.transform.RotateAround(worldPoint, Vector3.up, _currentAngle - _lastAngle);
+        JointLimits jointLimits = new JointLimits();
+        jointLimits.min = _currentAngle - 0.1f;
+        jointLimits.max = _currentAngle + 0.1f;
+        
+        _joint.limits = jointLimits;
+        //_mast.transform.RotateAround(worldPoint, Vector3.up, _currentAngle - _lastAngle);
 
         _lastAngle = _currentAngle;
     }
