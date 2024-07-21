@@ -149,9 +149,9 @@ namespace Assets.Scripts.Physics
                 float rollAccount = (90.0f - Mathf.Abs(roll)) / 90.0f;
                 // Should take appli point position in account with sail rotation
                 force += _liftDrag[i].ComputeForce(_state, fluidVector_body, mastDirection_body, rho) * rollAccount;// _environment.GetRho());
-                force.force = Vector3.zero;
-                force.torque = Vector3.zero;
-                Debug.Log("ROOOOOOLLLLLLLLL " + roll + " //// " + force.force );
+                //force.torque.y = 0;
+            
+                //Debug.Log("ROOOOOOLLLLLLLLL " + roll + " //// " + force.force );
 
 
                 //// Unity body frame
