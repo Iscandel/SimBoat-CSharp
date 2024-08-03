@@ -57,6 +57,8 @@ public class UnityBody : IBody
 
 public class UnityPhysicsManager : IPhysicsManager
 {
+    public float _physicsDeltaTime = 0.02f;
+
     protected float _oldTime;
 
     protected List<UnityBody> _bodies;
@@ -91,6 +93,9 @@ public class UnityPhysicsManager : IPhysicsManager
 
 
         FirstScript.PreUpdate += PreUpdate;
+
+        //_physicsDeltaTime = 0.02f;
+        Time.fixedDeltaTime = _physicsDeltaTime; ;
     }
 
     void Init()
@@ -99,6 +104,7 @@ public class UnityPhysicsManager : IPhysicsManager
         _physicsListeners = new List<IPhysicsListener>();
 
         FirstScript.PreUpdate += PreUpdate;
+        Time.fixedDeltaTime = _physicsDeltaTime; ;
     }
 
     public void UpdateForces(double currentTime)
@@ -113,6 +119,7 @@ public class UnityPhysicsManager : IPhysicsManager
                 //List<ForceTorque> force = new List<ForceTorque>();
                 ForceTorque force = new ForceTorque();
                 listener.ComputeForce(body, ref force, body.state);
+                //Debug.Log($"UNITY {Time.fixedTime}: {force.force}");
                 //foreach (ForceTorque f in force)
                 {
                     if (forceObject.frame == RefFrame.WORLD_UNITY || forceObject.frame == RefFrame.WORLD_NED)
@@ -170,7 +177,13 @@ public class UnityPhysicsManager : IPhysicsManager
         {
             UnityBody body = _bodies[i];
             UpdateKinematics(ref body);
+            //var nedState = UnityStateToNED((body as UnityBody).state);
+            //float roll = 0, pitch = 0, yaw = 0;
+            //MathTools.GetEulerAngleDegrees(nedState.rotation, ref roll, ref pitch, ref yaw);
+            //Debug.Log(Time.fixedTime  + " " + yaw + " " + nedState.velocity_body + " " + nedState.angularVelocity_body + " " + nedState.position);
         }
+
+
         _oldTime = Time.fixedTime;
         TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.STATE_UPDATED, null);
         TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.START, null);
@@ -255,7 +268,7 @@ public class UnityPhysicsManager : IPhysicsManager
             state.angularAcceleration = Vector3.zero;
             state.angularAcceleration_body = Vector3.zero;
         }
-        else
+        else if(dt > 0)
         {
             state.acceleration = (state.velocity - previous.velocity) / dt;
             state.acceleration_body = (state.velocity_body - previous.velocity_body) / dt;

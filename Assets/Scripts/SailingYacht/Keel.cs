@@ -11,7 +11,9 @@ namespace Sim.Physics
     public class Keel : MonoBehaviour, IForceListener, IPhysicsListener
     {
 
-        public float _scale;
+        //public float _scale;
+        public float _forceScale;
+        public float _torqueScale;
         //public float _area;
         //public Vector3 _centerOfEffort;
 
@@ -20,8 +22,6 @@ namespace Sim.Physics
         public AnimationCurve _dragCurve;
 
         public Vector3 _CLR;
-
-        public bool _computeOptimalAngle;
 
         private IPhysicsManager _physicsManager;
         private IBody _body;
@@ -57,7 +57,8 @@ namespace Sim.Physics
             _liftDrag.LiftCurve = _liftCurve;
             _liftDrag.DragCurve = _dragCurve;
             _liftDrag.Area = _area;
-            _liftDrag.Scale = _scale;
+            _liftDrag.ForceScale = _forceScale;
+            _liftDrag.TorqueScale = _torqueScale;
             _liftDrag.AppliPoint = _CLR;
             _liftDrag.IsDebug = _isDebug;
 
@@ -104,7 +105,7 @@ namespace Sim.Physics
         {
             float rho = _environment.GetRho();
 
-            Vector3 keelDirection_body = Quaternion.Inverse(_state.rotation) * new Vector3(1, 0, 0);
+            Vector3 keelDirection_body = /*Quaternion.Inverse(_state.rotation) **/ new Vector3(1, 0, 0);
             Vector3 fluidVector_body = Quaternion.Inverse(_state.rotation) * _environment.GetCurrentVector_WorldNED();
             // Water force is less efficient when the boat has heeling (0 for pi/2, 1 for 0 degrees)
             float roll = 0, pitch = 0, yaw = 0;
@@ -112,7 +113,8 @@ namespace Sim.Physics
 
             float rollAccount = (90.0f - Mathf.Abs(roll)) / 90.0f;
             // Should take appli point position in account with sail rotation
-            force += _liftDrag.ComputeForce(_state, fluidVector_body, keelDirection_body, rho) * rollAccount;
+            force += _liftDrag.ComputeForce(_state, fluidVector_body, keelDirection_body, rho);// * rollAccount;
+            force.torque.y = 0;
         }
 
         public void OnPhysicsEvent(IPhysicsListener.EventType eventType, object data)

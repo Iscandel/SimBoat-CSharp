@@ -11,7 +11,8 @@ namespace Sim.Physics
     public class SailLiftDrag : MonoBehaviour, IForceListener, IPhysicsListener
     {
         public float _rho;
-        public float _scale;
+        public float _forceScale;
+        public float _torqueScale;
         //public float _area;
         //public Vector3 _centerOfEffort;
 
@@ -22,6 +23,8 @@ namespace Sim.Physics
         //public List<List<float>> _dragAngleList;
         //public List<List<float>> _dragCoeffList;
         public List<Vector3> _CoEList;
+        public List<float> _minTorque;
+        public List<float> _maxTorque;
 
         public bool _computeOptimalAngle;
 
@@ -72,9 +75,12 @@ namespace Sim.Physics
                 _liftDrag[i].LiftCurve = _liftCurveList[i];
                 _liftDrag[i].DragCurve = _dragCurveList[i];
                 _liftDrag[i].Area = _areaList[i];
-                _liftDrag[i].Scale = _scale;
+                _liftDrag[i].ForceScale = _forceScale;
+                _liftDrag[i].TorqueScale = _torqueScale;
                 _liftDrag[i].AppliPoint = _CoEList[i];
                 _liftDrag[i].IsDebug = _isDebug;
+                _liftDrag[i].MinTorque = _minTorque[i];
+                _liftDrag[i].MaxTorque = _maxTorque[i];
             }
 
         }
@@ -149,8 +155,9 @@ namespace Sim.Physics
                 float rollAccount = (90.0f - Mathf.Abs(roll)) / 90.0f;
                 // Should take appli point position in account with sail rotation
                 force += _liftDrag[i].ComputeForce(_state, fluidVector_body, mastDirection_body, rho) * rollAccount;// _environment.GetRho());
-                //force.torque.y = 0;
-            
+                force.torque.y = 0;
+
+                Debug.Log(mastDirection_body);
                 //Debug.Log("ROOOOOOLLLLLLLLL " + roll + " //// " + force.force );
 
 

@@ -5,16 +5,19 @@ using UnityEngine;
 
 public class LiftDrag
 {
-    public event Action<Vector3, Vector3> OnSailLiftDragComputation = delegate { };
+    public event Action<Vector3, Vector3, Vector3> OnSailLiftDragComputation = delegate { };
 
     public LiftDrag()
     {
         _appliPoint = Vector3.zero;
         _area = 0;
-        _scale = 0;
+        _forceScale = 0;
+        _torqueScale = 0;
         _dragCurve = null;
         _liftCurve = null;
         _isDebug = false;
+        _minTorque = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+        _maxTorque = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
     }
 
     private Vector3 ComputeApparentWater(Vector3 fluidVector_body, Vector3 velocityVector_body)
@@ -66,11 +69,12 @@ public class LiftDrag
         float drag = GetDragCoeff(aoa);
         float lift = GetLiftCoeff(aoa);
         float v = apparentFluid_body.magnitude;//2; 
-        Vector3 force = 0.5f * rho * _area * v * v * (drag * dragDir.normalized + lift * liftDir.normalized);
+        Vector3 force = 0.5f * rho * _area * v * v * (drag * dragDir.normalized + lift * liftDir.normalized) * _forceScale;
         res.force = force;
-        res.torque = MathTools.TorqueNEDToNED(_appliPoint, force) * _scale;
+        res.torque = MathTools.TorqueNEDToNED(_appliPoint, force) * _torqueScale;
+        res.torque = Saturate(res.torque);
 
-        OnSailLiftDragComputation(res.force, res.torque);
+        OnSailLiftDragComputation(liftDir, dragDir, force);
 
         if (_isDebug)
             DrawDebug(state, dragDir, liftDir, force, res.torque, apparentFluid_body, aoa);
@@ -101,12 +105,17 @@ public class LiftDrag
         // Method 2
         res.force.x = 0.5f * rho * _area * v * v * (lift * Mathf.Sin(angleApparent) + drag * Mathf.Cos(angleApparent));
         res.force.y = 0.5f * rho * _area * v * v * (lift * Mathf.Cos(angleApparent) - drag * Mathf.Sin(angleApparent));
-        res.torque = MathTools.TorqueNEDToNED(_appliPoint, res.force) * _scale;
+        res.torque = MathTools.TorqueNEDToNED(_appliPoint, res.force) * _torqueScale;
 
         if (_isDebug)
             DrawDebug2(state, res.force);//, liftDir, force);
 
         return res;
+    }
+
+    Vector3 Saturate(Vector3 vec)
+    {
+        return Vector3.Max(Vector3.Min(vec, _maxTorque), _minTorque);
     }
 
     Vector3 ComputeLiftDirection(Vector3 apparentFluid, Vector3 oppositeFoilDirection_body)
@@ -165,15 +174,22 @@ public class LiftDrag
 
     private Vector3 _appliPoint;
     private float _area;
-    private float _scale;
+    private float _torqueScale;
+    private float _forceScale;
     private AnimationCurve _dragCurve;
     private AnimationCurve _liftCurve;
     private bool _isDebug;
+    private Vector3 _minTorque;
+    private Vector3 _maxTorque;
 
-    public float Scale { get => _scale; set => _scale = value; }
+    public float TorqueScale { get => _torqueScale; set => _torqueScale = value; }
+
+    public float ForceScale { get => _torqueScale; set => _forceScale = value; }
     public float Area { get => _area; set => _area = value; }
     public Vector3 AppliPoint { get => _appliPoint; set => _appliPoint = value; }
     public AnimationCurve DragCurve { get => _dragCurve; set => _dragCurve = value; }
     public AnimationCurve LiftCurve { get => _liftCurve; set => _liftCurve = value; }
     public bool IsDebug { get => _isDebug; set => _isDebug = value; }
+    public float MinTorque { get => _minTorque.x; set => _minTorque = new Vector3(value, value, value); }
+    public float MaxTorque { get => _maxTorque.x; set => _maxTorque = new Vector3(value, value, value); }
 }

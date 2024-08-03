@@ -16,6 +16,7 @@ namespace Sim.Physics
     {
         private Vector3 _lift;
         private Vector3 _drag;
+        private Vector3 _force;
         private IPhysicsManager _physicsManager;
         private IBody _body;
         protected BodyState _state;
@@ -28,6 +29,7 @@ namespace Sim.Physics
         // Use this for initialization
         void Start()
         {
+            _state = new BodyState();
             GetComponent<SailLiftDrag>().AddLiftDragListener(this);
             GetComponent<Keel>().AddLiftDragListener(this);
 
@@ -43,33 +45,36 @@ namespace Sim.Physics
         }
 
         // Update is called once per frame
-        void Update()
+        void FixedUpdate()
         {
+
             // using script order, make sure this one is the last called
-            DrawDebug(_state, _drag, _lift);
+            DrawDebug(_state, _drag, _lift, _force);
             _drag = Vector3.zero;
             _lift = Vector3.zero;
+            _force = Vector3.zero;
         }
 
-        void DrawDebug(BodyState state, Vector3 dragDir, Vector3 liftDir)
+        void DrawDebug(BodyState state, Vector3 dragDir, Vector3 liftDir, Vector3 force)
         {
             Vector3 appliPointUnity = MathTools.NEDToUnity(state.worldCenterOfMass);
 
             DrawArrow.ForDebug(appliPointUnity, MathTools.VectorNEDToUnity(state.rotation * dragDir.normalized), Color.green);
             DrawArrow.ForDebug(appliPointUnity, MathTools.VectorNEDToUnity(state.rotation * liftDir.normalized), Color.red);
-            DrawArrow.ForDebug(appliPointUnity, MathTools.VectorNEDToUnity(state.rotation * (dragDir + liftDir).normalized), Color.blue);
+            DrawArrow.ForDebug(appliPointUnity, MathTools.VectorNEDToUnity(state.rotation * force.normalized), Color.blue);
 
             Debug.Log("===============================================");
             Debug.Log("Total");
-            Debug.Log("Drag (normalized) vector: " + dragDir.normalized);
-            Debug.Log("Lift (normalized) vector: " + liftDir.normalized);
-            Debug.Log("total (normalized) vector: " + (dragDir + liftDir).normalized);
+            Debug.Log("Drag vector: " + dragDir);
+            Debug.Log("Lift vector: " + liftDir);
+            Debug.Log("total vector: " + force);
         }
 
-        void LiftDragComputation(Vector3 lift, Vector3 drag)
+        void LiftDragComputation(Vector3 liftDir, Vector3 dragDir, Vector3 force)
         {
-            _lift += lift;
-            _drag += drag;
+            _lift += liftDir;
+            _drag += dragDir;
+            _force += force;
         }
 
         public void OnPhysicsEvent(IPhysicsListener.EventType eventType, object data)

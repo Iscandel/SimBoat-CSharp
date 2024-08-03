@@ -35,7 +35,9 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
     public AnimationCurve _dragCurveFxFy;
     private LiftDrag _liftDrag2;
 
-    public float _scale;
+    //public float _scale;
+    public float _forceScale;
+    public float _torqueScale;
 
     public float _heightOffset;
     public bool _simplifiedHeightDetection;
@@ -78,7 +80,8 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
         _liftDrag.LiftCurve = _liftCurve;
         _liftDrag.DragCurve = _dragCurve;
         _liftDrag.Area = _area;
-        _liftDrag.Scale = _scale;
+        _liftDrag.ForceScale = _forceScale;
+        _liftDrag.TorqueScale = _torqueScale;
         _liftDrag.AppliPoint = _rudderAppliPoint;
         _liftDrag.IsDebug = _isDebug;
 
@@ -87,7 +90,8 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
         _liftDrag2.LiftCurve = _liftCurveFxFy;
         _liftDrag2.DragCurve = _dragCurveFxFy;
         _liftDrag2.Area = _area;
-        _liftDrag2.Scale = _scale;
+        _liftDrag2.ForceScale = _forceScale;
+        _liftDrag2.TorqueScale = _torqueScale;
         _liftDrag2.AppliPoint = _rudderAppliPoint;
         _liftDrag2.IsDebug = _isDebug;
 

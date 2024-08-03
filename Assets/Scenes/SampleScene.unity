@@ -946,7 +946,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _rho: 1026
-  _scale: 0
+  _forceScale: 0
+  _torqueScale: 0
   _areaList:
   - 22.3
   - 12.75
@@ -1695,6 +1696,8 @@ MonoBehaviour:
   _CoEList:
   - {x: 0, y: 6.87, z: 0}
   - {x: 0, y: 4.6, z: 2}
+  _minTorque: []
+  _maxTorque: []
   _computeOptimalAngle: 0
   _mast: {fileID: 0}
   _mastController: {fileID: 0}
@@ -2821,6 +2824,8 @@ GameObject:
   - component: {fileID: 778836096}
   - component: {fileID: 778836097}
   - component: {fileID: 778836098}
+  - component: {fileID: 778836099}
+  - component: {fileID: 778836100}
   m_Layer: 0
   m_Name: SailingYachtRudder
   m_TagString: Untagged
@@ -2835,13 +2840,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 778836085}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cdb32c366acb2b74d8d2405494d80fc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _rho: 1026
-  _scale: 1
+  _forceScale: 1
+  _torqueScale: 1
   _areaList:
   - 22.3
   - 12.75
@@ -3590,6 +3596,12 @@ MonoBehaviour:
   _CoEList:
   - {x: 0, y: 0, z: -6.87}
   - {x: 2, y: 0, z: -4.6}
+  _minTorque:
+  - -80000000
+  - -10000
+  _maxTorque:
+  - 80000000
+  - 10000
   _computeOptimalAngle: 1
   _mast: {fileID: 2034870252}
   _mastController: {fileID: 778836097}
@@ -3696,9 +3708,9 @@ MonoBehaviour:
   _fs: 0.4
   _pSlamming: 1
   _mass: 7000
-  _localCoMOffset: {x: 0, y: -1.5, z: 0}
+  _localCoMOffset: {x: 0, y: -3, z: 0}
   _originFromCoG: {x: 0, y: 0, z: 0}
-  _diagInertia: {x: 70000, y: 70000, z: 6000}
+  _diagInertia: {x: 70000, y: 70000, z: 24000}
   _computeViscous: 0
   _computePressure: 0
   _computeSlamming: 0
@@ -3736,7 +3748,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 778836085}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 223cba4cd3f4d3e46861644344932d63, type: 3}
   m_Name: 
@@ -4065,7 +4077,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 1
     m_RotationOrder: 4
-  _scale: 10
+  _forceScale: 0
+  _torqueScale: 10
   _heightOffset: -5
   _simplifiedHeightDetection: 1
   _torqueFactor: 500
@@ -4078,7 +4091,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 778836085}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aad72460046273e45ad8c10738a8989e, type: 3}
   m_Name: 
@@ -4128,12 +4141,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 778836085}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b6139bf51c1aa544b66f941e2907a61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _scale: 1
+  _forceScale: 100
+  _torqueScale: 1
   _area: 4
   _liftCurve:
     serializedVersion: 2
@@ -4337,8 +4351,33 @@ MonoBehaviour:
     m_PostInfinity: 0
     m_RotationOrder: 4
   _CLR: {x: 0, y: 0, z: -2}
-  _computeOptimalAngle: 0
   _isDebug: 0
+--- !u!114 &778836099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 778836085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b844a74827a8e5548abe46d8c97ea8db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &778836100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 778836085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36f1f0b9146aa4e49a876eb69836d500, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _addedWaterLinear: {x: 700, y: 6300, z: 6300}
+  _addedWaterAngular: {x: 2400, y: 63000, z: 63000}
 --- !u!1 &795577571
 GameObject:
   m_ObjectHideFlags: 0
@@ -14907,6 +14946,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 629a286e8da7eaa459b9b5ce2600a2a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _physicsDeltaTime: 0.01
 --- !u!4 &1206536730
 Transform:
   m_ObjectHideFlags: 0
@@ -15010,6 +15050,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _fixTimeScale: 0
+  _timeScale: 0
 --- !u!4 &1235590494
 Transform:
   m_ObjectHideFlags: 0
@@ -15237,7 +15278,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _direction: {x: 0, y: 0, z: 1}
   _speed: 2
-  _heading: 0
+  _heading: 143
   _isDebug: 0
 --- !u!1 &1406790160
 GameObject:
