@@ -2847,7 +2847,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _rho: 1026
   _forceScale: 1
-  _torqueScale: 1
+  _torqueScale: 0.1
   _areaList:
   - 22.3
   - 12.75
@@ -3708,7 +3708,7 @@ MonoBehaviour:
   _fs: 0.4
   _pSlamming: 1
   _mass: 7000
-  _localCoMOffset: {x: 0, y: -3, z: 0}
+  _localCoMOffset: {x: 0, y: -1.5, z: 0}
   _originFromCoG: {x: 0, y: 0, z: 0}
   _diagInertia: {x: 70000, y: 70000, z: 24000}
   _computeViscous: 0
@@ -4147,7 +4147,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _forceScale: 100
-  _torqueScale: 1
+  _torqueScale: 0.1
   _area: 4
   _liftCurve:
     serializedVersion: 2
@@ -4155,24 +4155,24 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0.021436125
-      outSlope: 0.021436125
+      inSlope: 0.004994007
+      outSlope: 0.004994007
       tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 5.020935
-      value: 0.107629396
-      inSlope: 0.018603921
-      outSlope: 0.018603921
+      time: 9.299477
+      value: 0.046441652
+      inSlope: 0.010782449
+      outSlope: 0.010782449
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 10.507133
-      value: 0.19415615
+      time: 16.4898
+      value: 0.1655917
       inSlope: 0.006967771
       outSlope: 0.006967771
       tangentMode: 0
@@ -4180,8 +4180,8 @@ MonoBehaviour:
       inWeight: 0.31272352
       outWeight: 0.42562592
     - serializedVersion: 3
-      time: 20
-      value: 0.4
+      time: 25.36905
+      value: 0.4095215
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -4359,7 +4359,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 778836085}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b844a74827a8e5548abe46d8c97ea8db, type: 3}
   m_Name: 
@@ -6982,7 +6982,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1036622344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15277,8 +15277,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _direction: {x: 0, y: 0, z: 1}
-  _speed: 2
-  _heading: 143
+  _speed: 5
+  _heading: 0
   _isDebug: 0
 --- !u!1 &1406790160
 GameObject:
@@ -22624,7 +22624,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1814269866
 MonoBehaviour:
   m_ObjectHideFlags: 0

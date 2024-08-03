@@ -1,5 +1,4 @@
 using Sim.Physics;
-using Palmmedia.ReportGenerator.Core.CodeAnalysis;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -143,6 +142,7 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
         const float eps = 1e-2f;
         res.torque.z = res.torque.z < -eps ? Mathf.Min(res.torque.z, rudderAngle * _torqueFactor) :
                        res.torque.z > eps ? Mathf.Max(res.torque.z, rudderAngle * _torqueFactor) : rudderAngle * _torqueFactor;
+        res.torque.y = 0;
 
         if (_isDebug)
         {

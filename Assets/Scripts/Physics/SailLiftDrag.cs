@@ -39,7 +39,7 @@ namespace Sim.Physics
 
         private List<LiftDrag> _liftDrag;
 
-        public bool _isDebug;
+        public bool _isDebug = true;
 
         // Use this for initialization
         void Start()
@@ -64,7 +64,7 @@ namespace Sim.Physics
                 Debug.LogError("SailLiftDrag: area / lift / curve, one of them has not the same size");
             }
 
-            _isDebug = true;
+            //_isDebug = true;
 
             _liftDrag = new List<LiftDrag>();
 
@@ -157,7 +157,7 @@ namespace Sim.Physics
                 force += _liftDrag[i].ComputeForce(_state, fluidVector_body, mastDirection_body, rho) * rollAccount;// _environment.GetRho());
                 force.torque.y = 0;
 
-                Debug.Log(mastDirection_body);
+                //Debug.Log(mastDirection_body);
                 //Debug.Log("ROOOOOOLLLLLLLLL " + roll + " //// " + force.force );
 
 

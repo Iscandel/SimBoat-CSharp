@@ -31,7 +31,7 @@ namespace Sim.Physics
 
         private LiftDrag _liftDrag;
 
-        public bool _isDebug;
+        public bool _isDebug = true;
 
         EntityEnvironment _environment;
 
@@ -51,7 +51,7 @@ namespace Sim.Physics
                 _physicsManager.AddForceListener(this, _body, _refFrame);
             }
 
-            _isDebug = true;
+            //_isDebug = true;
 
             _liftDrag = new LiftDrag();
             _liftDrag.LiftCurve = _liftCurve;
