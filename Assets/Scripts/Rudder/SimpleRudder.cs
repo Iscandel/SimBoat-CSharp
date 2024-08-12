@@ -50,7 +50,7 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
 
         GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
         _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
-        _physicsManager.AddPhysicsEventListener(this);
+        //_physicsManager.AddPhysicsEventListener(this);
 
         MeshBasedWaterPhysics boatForcesUnity = GetComponent<MeshBasedWaterPhysics>();
 
@@ -65,6 +65,28 @@ public class SimpleRudder : MonoBehaviour, IForceListener, IPhysicsListener
         _actuatorDynamics = new LinearActuatorDynamics(absSpeed);
 
         _environment = GetComponent<EntityEnvironment>();
+    }
+
+    private void OnEnable()
+    {
+        if (_physicsManager == null)
+        {
+            GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
+            _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
+        }
+        if (_body != null)
+            _physicsManager.AddForceListener(this, _body, RefFrame.BODY_NED);
+
+        _physicsManager.AddPhysicsEventListener(this);
+    }
+
+    private void OnDisable()
+    {
+        _physicsManager.RemovePhysicsEventListener(this);
+        if (_body != null)
+        {
+            _physicsManager.RemoveForceListener(_body, this);
+        }
     }
 
     // Update is called once per frame

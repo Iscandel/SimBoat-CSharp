@@ -70,6 +70,7 @@ public class UnityPhysicsManager : IPhysicsManager
     {
         get
         {
+            
             if (_instance == null)
             {
                 _instance = FindObjectOfType<UnityPhysicsManager>();
@@ -78,7 +79,10 @@ public class UnityPhysicsManager : IPhysicsManager
 
             if (_instance == null)
             {
-                _instance = new UnityPhysicsManager();
+                GameObject obj = new GameObject("UnityPhysicsManager");
+                obj.AddComponent<UnityPhysicsManager>();
+                _instance = FindObjectOfType<UnityPhysicsManager>();
+                _instance.Init();
             }
 
             return _instance;
@@ -211,9 +215,13 @@ public class UnityPhysicsManager : IPhysicsManager
         }
     }
 
-    public override void AddPhysicsEventListener(IPhysicsListener listener)
+    public override bool AddPhysicsEventListener(IPhysicsListener listener)
     {
+        if (_physicsListeners.Contains(listener))
+            return false;
+        
         _physicsListeners.Add(listener);
+        return true;
     }
 
     public override bool RemovePhysicsEventListener(IPhysicsListener listener)
@@ -396,6 +404,18 @@ public class UnityPhysicsManager : IPhysicsManager
         UpdateKinematics(ref body);
 
         return body;
+    }
+
+    public override bool DestroyBody(IBody body)
+    {
+        UnityBody unityBody = body as UnityBody;
+        if(unityBody == null) return false;
+
+        TriggerPhysicsUpdateEvent(IPhysicsListener.EventType.BODY_TO_DESTROY, body);
+
+        _bodies.Remove(unityBody);
+
+        return true;
     }
 
     public override void AddForceListener(IForceListener listener, IBody body, RefFrame frame)

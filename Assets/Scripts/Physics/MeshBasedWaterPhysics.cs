@@ -11,7 +11,7 @@ using UnityEngine.PlayerLoop;
 
 namespace Sim.Physics
 {
-    public class MeshBasedWaterPhysics : MonoBehaviour, IForceListener, IPhysicsListener
+    public class MeshBasedWaterPhysics : MonoBehaviour, IForceListener, IPhysicsListener, IDisposable
     {
         internal struct VertexAndDepth
         {
@@ -112,6 +112,8 @@ namespace Sim.Physics
         private float[] _lastOrigArea;
         private float[] _origArea;
 
+        private bool _disposed = false;
+
         // Hydrodynamics
         public float _Cpd1 = 100;
         public float _Cpd2 = 100;
@@ -209,6 +211,29 @@ namespace Sim.Physics
             _physicsManager.AddForceListener(this, _body, _refFrame);
             //_physicsManager.Setc
             _state = _physicsManager.GetBodyState(_body, RefFrame.UNITY);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _physicsManager.DestroyBody(_body);
+                }
+                _disposed = true;
+            }
+        }
+
+        ~MeshBasedWaterPhysics()
+        {
+            Dispose(false);
         }
 
         void ClearDebugMesh()

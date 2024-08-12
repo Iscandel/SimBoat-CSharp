@@ -336,9 +336,14 @@ public class ChronoPhysicsManager : IPhysicsManager
         }
     }
 
-    public override void AddPhysicsEventListener(IPhysicsListener listener)
+    public override bool AddPhysicsEventListener(IPhysicsListener listener)
     {
+        if (_physicsListeners.Contains(listener))
+            return false;
+
         _physicsListeners.Add(listener);
+
+        return true;
     }
 
     public override bool RemovePhysicsEventListener(IPhysicsListener listener)
@@ -622,6 +627,11 @@ public class ChronoPhysicsManager : IPhysicsManager
     public override BodyState GetBodyState(IBody body, RefFrame frame) // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     {
         return (body as ChronoBody).state;
+    }
+
+    public override bool DestroyBody(IBody body)
+    {
+        return false;
     }
 
     //protected ChForce CreateChForce(ChForce.ForceType type, ChVectorD forceVec)

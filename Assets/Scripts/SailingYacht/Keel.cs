@@ -44,7 +44,7 @@ namespace Sim.Physics
 
             GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
             _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
-            _physicsManager.AddPhysicsEventListener(this);
+            //_physicsManager.AddPhysicsEventListener(this);
             if (boatForcesUnity.Body != null)
             {
                 _body = boatForcesUnity.Body;
@@ -72,6 +72,7 @@ namespace Sim.Physics
 
         private void OnDisable()
         {
+            _physicsManager.RemovePhysicsEventListener(this);
             if (_body != null)
             {
                 _physicsManager.RemoveForceListener(_body, this);
@@ -87,6 +88,8 @@ namespace Sim.Physics
             }
             if (_body != null)
                 _physicsManager.AddForceListener(this, _body, _refFrame);
+
+            _physicsManager.AddPhysicsEventListener(this);
         }
 
 

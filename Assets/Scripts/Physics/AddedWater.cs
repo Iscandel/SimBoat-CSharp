@@ -37,7 +37,7 @@ namespace Sim.Physics
 
             GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
             _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
-            _physicsManager.AddPhysicsEventListener(this);
+            //_physicsManager.AddPhysicsEventListener(this);
             if (_boatForcesUnity.Body != null)
             {
                 _body = _boatForcesUnity.Body;
@@ -45,6 +45,28 @@ namespace Sim.Physics
             }
 
             _alphaFilteredAcc = 0.3f;
+        }
+
+        private void OnEnable()
+        {
+            if (_physicsManager == null)
+            {
+                GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
+                _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
+            }
+            if (_body != null)
+                _physicsManager.AddForceListener(this, _body, _refFrame);
+
+            _physicsManager.AddPhysicsEventListener(this);
+        }
+        
+        private void OnDisable()
+        {
+            _physicsManager.RemovePhysicsEventListener(this);
+            if (_body != null)
+            {
+                _physicsManager.RemoveForceListener(_body, this);
+            }
         }
 
         // Update is called once per frame

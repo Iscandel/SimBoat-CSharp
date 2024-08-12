@@ -6,6 +6,8 @@ using DDS;
 using DDSHelper;
 
 using entity;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 
 public class PathResolver
 {
@@ -35,10 +37,26 @@ public class PathResolver
         return  _directories.Remove(path);
     }
 
-    public static string Resolve(string prefabName)
+    public static string Resolve(string prefabName, string tag = "")
     {
         _resourcePath.TryGetValue(prefabName.ToLower(), out string path);
         return path;
+    }
+
+    public static List<GameObject> GetGameObjectsWithTag(string tag) 
+    {
+        //foreach(string sPrefab in _resourcePath.Keys)
+        //{
+        //    _resourcePath[sPrefab
+        //}
+        List<GameObject> res = new List<GameObject>();
+        foreach (GameObject go in Resources.LoadAll("Prefabs/"))
+            if(go.CompareTag(tag))
+                res.Add(go);
+
+        var tmp = AssetDatabase.FindAssets("t:prefab", _directories.ToArray());
+
+        return res;
     }
 
 }

@@ -97,6 +97,28 @@ public class Rudder : MonoBehaviour, IForceListener, IPhysicsListener
         _environment = GetComponent<EntityEnvironment>();
     }
 
+    private void OnEnable()
+    {
+        if (_physicsManager == null)
+        {
+            GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
+            _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
+        }
+        if (_body != null)
+            _physicsManager.AddForceListener(this, _body, RefFrame.BODY_NED);
+
+        _physicsManager.AddPhysicsEventListener(this);
+    }
+
+    private void OnDisable()
+    {
+        _physicsManager.RemovePhysicsEventListener(this);
+        if (_body != null)
+        {
+            _physicsManager.RemoveForceListener(_body, this);
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {       

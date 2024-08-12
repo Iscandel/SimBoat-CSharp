@@ -88,7 +88,8 @@ public interface IPhysicsListener
         START,
         END,
         STATE_UPDATED,
-        BODY_CREATED
+        BODY_CREATED,
+        BODY_TO_DESTROY
     };
 
     public void OnPhysicsEvent(EventType eventType, object data);
@@ -102,9 +103,10 @@ public interface IForceListener
 public abstract class IPhysicsManager : MonoBehaviour
 {
     public abstract IBody CreateBody(BodyParams parameters, GameObject bodyGameobject);
+    public abstract bool DestroyBody(IBody body);
     public abstract void AddForceListener(IForceListener listener, IBody body, RefFrame frame);
     public abstract void RemoveForceListener(IBody body, IForceListener listener);
-    public abstract void AddPhysicsEventListener(IPhysicsListener listener);
+    public abstract bool AddPhysicsEventListener(IPhysicsListener listener);
     public abstract bool RemovePhysicsEventListener(IPhysicsListener listener);
     public abstract BodyState GetBodyState(IBody body, RefFrame frame);
 
