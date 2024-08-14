@@ -13,11 +13,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4826037015833657012, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
       propertyPath: m_Name
-      value: SailingYachtRudder Variant
+      value: SailingYachtMotor
       objectReference: {fileID: 0}
     - target: {fileID: 4826037015833657015, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4826037015833657017, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
+      propertyPath: _noYaw
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4826037015833657017, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
+      propertyPath: _noPitch
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4826037015833657017, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
       propertyPath: m_Enabled
@@ -65,6 +73,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4826037015833657020, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4826037015833657022, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

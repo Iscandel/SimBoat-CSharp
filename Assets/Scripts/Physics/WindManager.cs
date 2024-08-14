@@ -48,7 +48,7 @@ public class WindManager : MonoBehaviour
     }
 
     public float Heading
-    { get { return _heading; } }
+    { get { return _heading; } set { _heading = value; } }
 
     public Vector3 WindVector
     { 

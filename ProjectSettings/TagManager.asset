@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Ocean
   - PhysicsManager
+  - Vehicle
+  - GUI
+  - VehicleInitializer
   layers:
   - Default
   - TransparentFX

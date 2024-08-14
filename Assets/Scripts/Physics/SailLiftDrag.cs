@@ -41,6 +41,10 @@ namespace Sim.Physics
 
         public bool _isDebug = true;
 
+        public bool ComputeOptimalAngle {
+           get => _computeOptimalAngle; set => _computeOptimalAngle = value; 
+        }
+
         // Use this for initialization
         void Start()
         {
