@@ -23,7 +23,12 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
     private IBody _body;
     private BodyState _state;
 
+    public bool _noRoll = false;
+    public bool _noPitch = false;
+    public bool _noYaw = false;
+
     public bool _isDebug;
+
 
 
     // Start is called before the first frame update
@@ -141,6 +146,10 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         ForceTorque force;
         force.force = Quaternion.Inverse(_state.rotation) * thrustForce;
         force.torque = Quaternion.Inverse(_state.rotation) * Vector3.Cross(_state.rotation * _thrustAppliPoint, thrustForce);
+        
+        if (_noRoll) force.torque.x = 0;
+        if (_noPitch) force.torque.y = 0;
+        if (_noYaw) force.torque.z = 0;
 
         return force;
     }
