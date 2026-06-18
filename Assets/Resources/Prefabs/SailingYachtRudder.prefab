@@ -3099,6 +3099,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _underwaterGameObject: {fileID: 0}
+  _refSubmergedArea: 17.28026
   _refFrame: 1
   _isDebug: 1
   _approximateMode: 1
@@ -3116,7 +3117,7 @@ MonoBehaviour:
   _diagInertia: {x: 70000, y: 70000, z: 24000}
   _computeViscous: 0
   _computePressure: 0
-  _computeSlamming: 0
+  _computeSlamming: 1
 --- !u!114 &4826037015833657019
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3171,6 +3172,9 @@ MonoBehaviour:
   _heightOffset: -3
   generateTorque: 0
   _simplifiedHeightDetection: 0
+  _noRoll: 0
+  _noPitch: 0
+  _noYaw: 0
   _isDebug: 1
 --- !u!114 &4826037015833657014
 MonoBehaviour:

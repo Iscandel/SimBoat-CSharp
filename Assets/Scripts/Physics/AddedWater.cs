@@ -18,8 +18,6 @@ namespace Sim.Physics
         public Vector3 _addedWaterLinear;
         public Vector3 _addedWaterAngular;
 
-
-
         private IPhysicsManager _physicsManager;
 
         private IBody _body;
@@ -102,12 +100,18 @@ namespace Sim.Physics
     ///////////////////////////////////////////////////////////////////////////////
     ForceTorque CalculateForce_RVEH(Vector3 acceleration_RVEH, Vector3 angular_acceleration_RVEH)
     {
-        Vector3 globalFilteredAcc_RVEHLin, globalFilteredAcc_RVEHAng;
+        float submergedArea = _boatForcesUnity.SubmergedArea;
+        float refSbmergedArea = _boatForcesUnity.RefSubmergedArea;
+
+            Vector3 globalFilteredAcc_RVEHLin, globalFilteredAcc_RVEHAng;
         (globalFilteredAcc_RVEHLin, globalFilteredAcc_RVEHAng) = ComputeFilteredAcceleration(acceleration_RVEH, angular_acceleration_RVEH);
 
             ForceTorque res = new ForceTorque();
         res.force  = - Vector3.Scale(_addedWaterLinear, globalFilteredAcc_RVEHLin);
         res.torque = - Vector3.Scale(_addedWaterAngular, globalFilteredAcc_RVEHAng);
+
+        if(refSbmergedArea > 0)
+            res = res * (submergedArea / refSbmergedArea);
 
         return res;
     }

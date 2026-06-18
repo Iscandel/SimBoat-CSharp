@@ -19,6 +19,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4826037015833657016, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
+      propertyPath: _refSubmergedArea
+      value: 17.28026
+      objectReference: {fileID: 0}
     - target: {fileID: 4826037015833657017, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
       propertyPath: _noYaw
       value: 0
@@ -30,6 +34,14 @@ PrefabInstance:
     - target: {fileID: 4826037015833657017, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4826037015833657017, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
+      propertyPath: _dynamicSpeedRPM
+      value: 30000
+      objectReference: {fileID: 0}
+    - target: {fileID: 4826037015833657018, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
+      propertyPath: _refSubmergedArea
+      value: 17.28026
       objectReference: {fileID: 0}
     - target: {fileID: 4826037015833657020, guid: 6dbd996ebe03d654ab7f91f67d65c811, type: 3}
       propertyPath: m_RootOrder

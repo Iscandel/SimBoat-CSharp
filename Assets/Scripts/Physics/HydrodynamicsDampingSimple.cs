@@ -35,11 +35,33 @@ namespace Sim.Physics
 
             GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
             _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
-            _physicsManager.AddPhysicsEventListener(this);
+            //_physicsManager.AddPhysicsEventListener(this);
             if (_boatForcesUnity.Body != null)
             {
                 _body = _boatForcesUnity.Body;
                 _physicsManager.AddForceListener(this, _body, _refFrame);
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (_physicsManager == null)
+            {
+                GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
+                _physicsManager = physicsManager[0].GetComponent<IPhysicsManager>();
+            }
+            if (_body != null)
+                _physicsManager.AddForceListener(this, _body, _refFrame);
+
+            _physicsManager.AddPhysicsEventListener(this);
+        }
+
+        private void OnDisable()
+        {
+            _physicsManager.RemovePhysicsEventListener(this);
+            if (_body != null)
+            {
+                _physicsManager.RemoveForceListener(_body, this);
             }
         }
 
@@ -63,6 +85,8 @@ namespace Sim.Physics
         {
             ForceTorque force;
             _surface = _boatForcesUnity.MeshArea;
+            float submergedArea = _boatForcesUnity.SubmergedArea;
+            float refSubmergedArea = _boatForcesUnity.RefSubmergedArea;
 
 
             Vector3 speed_body = _state.velocity_body;
@@ -80,6 +104,9 @@ namespace Sim.Physics
             force.torque.z = -0.5f * RHO * referenceArea * CN /** Mathf.Abs(angularSpeed.z)*/ * angularSpeed_body.z;
 
             //Debug.Log("HYDRO " + force + " " + torque);
+            //Debug.Log("HYDRO " + submergedArea + " " + refSubmergedArea);
+            if(refSubmergedArea > 0)
+                force = force * (submergedArea / refSubmergedArea);
 
             return force;
         }

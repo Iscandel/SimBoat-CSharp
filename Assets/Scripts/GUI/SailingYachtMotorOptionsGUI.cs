@@ -1,24 +1,23 @@
-using Sim.Physics;
+﻿using Sim.Physics;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class SailingYachtRudderOptionsGUI : MonoBehaviour
+public class SailingYachtMotorOptionsGUI : MonoBehaviour
 {
+
     protected bool _showOptions = false;
-    protected bool _automaticMast = true;
     protected bool _FEAHydro = false;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-       
+
     }
 
     public void OnGUI()
@@ -42,21 +41,8 @@ public class SailingYachtRudderOptionsGUI : MonoBehaviour
         if (_showOptions)
         {
             y += height + vspace;
-            _automaticMast = GUI.Toggle(new Rect(x, y, width, height), _automaticMast, "Automatic mast");
-            ChangeMastOption(_automaticMast);
-
-            y += height + vspace;
             _FEAHydro = GUI.Toggle(new Rect(x, y, width, height), _FEAHydro, "FEA hydro.");
             ChangeHydroOption(_FEAHydro);
-        }
-    }
-    public void ChangeMastOption(bool checked_)
-    {
-        var go = GameObject.FindGameObjectWithTag("Vehicle");
-        var sailLiftDrag = go.GetComponent<SailLiftDrag>();
-        if (sailLiftDrag != null)
-        {
-            sailLiftDrag.ComputeOptimalAngle = checked_;
         }
     }
 
@@ -64,17 +50,16 @@ public class SailingYachtRudderOptionsGUI : MonoBehaviour
     {
         var go = GameObject.FindGameObjectWithTag("Vehicle"); // Or query entity manager
         var feaHydro = go.GetComponent<MeshBasedWaterPhysics>();
-        if (feaHydro != null) 
+        if (feaHydro != null)
         {
             feaHydro._computePressure = checked_;
             feaHydro._computeViscous = checked_;
         }
 
         var genericHydro = go.GetComponent<HydrodynamicsDampingSimple>();
-        if(genericHydro != null)
+        if (genericHydro != null)
         {
             genericHydro.enabled = !checked_;
         }
     }
-
 }

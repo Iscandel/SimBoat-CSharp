@@ -23,9 +23,15 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
     private IBody _body;
     private BodyState _state;
 
+    private IDynamics _actuatorDynamicsRPM;
+    private IDynamics _actuatorDynamicsSteering;
+
     public bool _noRoll = false;
     public bool _noPitch = false;
     public bool _noYaw = false;
+
+    public float _dynamicSpeedRPM = 10;
+    public float _dynamicSpeedSteering = 10;
 
     public bool _isDebug;
 
@@ -56,6 +62,9 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
 
     private void OnEnable()
     {
+        _actuatorDynamicsRPM = new LinearActuatorDynamics(_dynamicSpeedRPM);
+        _actuatorDynamicsSteering = new LinearActuatorDynamics(_dynamicSpeedSteering);
+
         if (_physicsManager == null)
         {
             GameObject[] physicsManager = GameObject.FindGameObjectsWithTag("PhysicsManager");
@@ -86,7 +95,8 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         else thrust = Input.GetAxis("Accelerate");
 
 
-        _propellerRPM = thrust * _maxPropellerRPM;
+        //_propellerRPM = thrust * _maxPropellerRPM;
+        _actuatorDynamicsRPM.SetSetpoint(thrust * _maxPropellerRPM);
 
         //
         float angle = 0;
@@ -97,8 +107,20 @@ public class SimpleEngine : MonoBehaviour, IForceListener, IPhysicsListener
         else
             angle = -Input.GetAxis("Horizontal");
 
-        _rudderAngle = angle * _maxRudderAngle;
+        //_rudderAngle = angle * _maxRudderAngle;
+        _actuatorDynamicsSteering.SetSetpoint(angle * _maxRudderAngle);
     }
+
+    private void FixedUpdate()
+    {
+        _actuatorDynamicsRPM.Update(Time.fixedDeltaTime);
+        _actuatorDynamicsSteering.Update(Time.fixedDeltaTime);
+
+        _propellerRPM = _actuatorDynamicsRPM.GetState();
+        _rudderAngle = _actuatorDynamicsSteering.GetState();
+    }
+
+
 
     ForceTorque ComputeThrustForce()
     {

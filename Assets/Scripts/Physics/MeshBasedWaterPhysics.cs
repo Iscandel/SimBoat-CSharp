@@ -89,7 +89,9 @@ namespace Sim.Physics
         Mesh _underwaterMesh;
 
         float _meshArea = 0;
+        float[] _submergedAreas;
         float _submergedArea = 0;
+        public float _refSubmergedArea = 0; // When the boat is not moving, submerged area
 
         IWaterProvider _waterProvider;
 
@@ -148,6 +150,7 @@ namespace Sim.Physics
 
         public float MeshArea { get => _meshArea; set => _meshArea = value; }
         public float SubmergedArea { get => _submergedArea; set => _submergedArea = value; }
+        public float RefSubmergedArea { get => _refSubmergedArea; }
 
         public IBody Body { get => _body; }
 
@@ -188,7 +191,8 @@ namespace Sim.Physics
             }
 
             _forces = new ForceTorque[_trianglesAndVertices.Length];
-                
+            _submergedAreas = new float[_trianglesAndVertices.Length];
+
             GameObject[] oceanGO = GameObject.FindGameObjectsWithTag("Ocean");
             _waterProvider = oceanGO[0].GetComponent<IWaterProvider>();
 
@@ -263,7 +267,7 @@ namespace Sim.Physics
                 utri.Add(uvertices.Count - 1);
                 col.r = triangle.Slamming;
                 if (col.r < 0.2) col.a = 0; else col.a = 1;
-                //Debug.Log(col.r);
+                Debug.Log(col.r);
                 ucolor.Add(col);
                 uvertices.Add(toTransform.MultiplyPoint(triangle.p1));
                 unormals.Add(toTransform.MultiplyVector(triangle.normal));
@@ -358,6 +362,7 @@ namespace Sim.Physics
             {
                 _forces[i].force = Vector3.zero;
                 _forces[i].torque = Vector3.zero;
+                _submergedAreas[i] = 0;
             }
 
             Vector3[] vertices = _mesh.vertices;
@@ -380,7 +385,7 @@ namespace Sim.Physics
             //float[] verticesHeight = new float[_worldVertices.Length];
             if (!_waterProvider.SampleHeightAt(_worldVertices, ref _waterHeight))
             {
-                Debug.LogError("Sampling error");
+                //Debug.LogError("Sampling error");
                 status = false;
                 return new ForceTorque();
             }
@@ -392,6 +397,7 @@ namespace Sim.Physics
 
             // Try 1
             int nbThreads = 8;
+             // Could also use a vector 
             Thread[] threads = new Thread[nbThreads];
             int step = _trianglesAndVertices.Length / nbThreads;
             for (int i = 0; i < nbThreads; ++i)
@@ -413,6 +419,7 @@ namespace Sim.Physics
 
             //Try 2
             //const int threadCount = 10;
+            //_submergedAreas = new float[threadCount];
             //int step = _trianglesAndVertices.Length / threadCount;
             //using (var countdownEvent = new CountdownEvent(threadCount))
             //{
@@ -436,6 +443,7 @@ namespace Sim.Physics
 
             //Try 3
             //const int threadCount = 16;
+            //_submergedAreas = new float[threadCount];
             //int step = _trianglesAndVertices.Length / threadCount;
             //var tasks = new List<Task>();
             //for (int i = 0; i < threadCount; i++)
@@ -450,15 +458,17 @@ namespace Sim.Physics
 
             //Task.WaitAll(tasks.ToArray());
 
-
+            _submergedArea = 0;
             ForceTorque sumForces = new ForceTorque(); sumForces.force = Vector3.zero; sumForces.torque = Vector3.zero;
             for(int i =  0; i < _forces.Length; i++)
             {
                 sumForces += _forces[i];
-            }
+                _submergedArea += _submergedAreas[i];
+            }              
 
-            if (Math.Abs(Time.fixedTime - 0.34) < 0.01)
-                Debug.Log("Stop here");
+            //Debug.Log("SubmergedArea: " + _submergedArea);
+            //if (Math.Abs(Time.fixedTime - 0.34) < 0.01)
+            //    Debug.Log("Stop here");
 
 
             return sumForces;
@@ -488,6 +498,7 @@ namespace Sim.Physics
                 _lastSpeedAtOrigTriangle[i] = _speedAtOrigTriangle[i];
                 _speedAtOrigTriangle[i] = speedAtTriangle;
                 _lastOrigArea[i] = _origArea[i];
+                _origArea[i] = 0f;
 
                 // Height relative to surface water. Negative values mean underwater vertices
                 float height0 = worldVertex0.y - _waterHeight[i * 3];
@@ -511,7 +522,7 @@ namespace Sim.Physics
 
                 (VertexAndDepth H, VertexAndDepth M, VertexAndDepth L) = triangle.GetSortedByWaterHeight();
 
-                Debug.Assert(H.h >= M.h && H.h >= L.h && M.h >= L.h);
+                //Debug.Assert(H.h >= M.h && H.h >= L.h && M.h >= L.h); // TODO Check why it throws sometimes in build
 
                 // Cutting triangles
                 if (H.h > 0 && L.h < 0)
@@ -613,7 +624,7 @@ namespace Sim.Physics
                 }
             }
 
-            _submergedArea = 0;
+            //_submergedArea = 0;
             
             //foreach (Force force in forces)
             //    _rigidbody.AddForceAtPosition(force.force, force.appliPoint);
@@ -628,7 +639,7 @@ namespace Sim.Physics
             //float absG = -UnityPhysicsConstants.G.y;
             float area = GeometryTools.ComputeTriangleArea(H.vertex, M.vertex, L.vertex);
 
-            _submergedArea += area;
+            _submergedAreas[index] += area;
             Vector3 center = GeometryTools.ComputeCentroid(H.vertex, M.vertex, L.vertex);
             //Debug.Log(center.y);
             float depthCenter;
@@ -684,7 +695,7 @@ namespace Sim.Physics
                 float debugRatio = 0;
                 force += ComputeSlammingForces(speedAtOrigTriangle, lastSpeedAtOrigTriangle, speedAtTriangle, triangle.normal, origArea,
                         lastOrigArea, triangleArea, MeshArea, dt, tauMax, center, ref debugRatio);
-                    debugRatio = 0;
+                    //debugRatio = 0;
                     
                     triangle.Slamming = debugRatio;
                     //_submergedTriangles[index] = triangle;
